@@ -108,7 +108,7 @@ class DocumentImageGenerator():
         doc.spreadsheet.addElement(table)
         
         # Save the document
-        doc.save("document.ods")
+        doc.save("server/ai_model/src/assets/document.ods")
 
     def _convert_ods_to_pdf(self):
         """Convert an ODS file to PDF using LibreOffice CLI."""
@@ -116,10 +116,10 @@ class DocumentImageGenerator():
         try:
             subprocess.run([
                 "libreoffice", "--headless", 
-                "--convert-to", "pdf", "document.ods", 
-                "--outdir", "document.pdf"
+                "--convert-to", "pdf", "server/ai_model/src/assets/document.ods", 
+                "--outdir", "server/ai_model/src/assets"
             ], check=True)
-            os.remove("document.ods")
+            os.remove("server/ai_model/src/assets/document.ods")
         except subprocess.CalledProcessError as e:
             print(f"Error during conversion: {e}")
 
@@ -127,8 +127,12 @@ class DocumentImageGenerator():
         """Convert all pages of a PDF file to JPEG using pdf2image."""
         
         try:
-            self._images = convert_from_path("document.pdf")
-            os.remove("document.pdf")
+            images = convert_from_path("server/ai_model/src/assets/document.pdf")
+            for i, image in enumerate(images):
+                image.save(f"server/ai_model/src/assets/document_page_{i + 1}.jpg", "JPEG")
+                self._images.append(cv2.imread(f"server/ai_model/src/assets/document_page_{i + 1}.jpg"))
+                os.remove(f"server/ai_model/src/assets/document_page_{i + 1}.jpg")
+            os.remove("server/ai_model/src/assets/document.pdf")
         except Exception as e:
             print(f"Error during conversion: {e}")
 
@@ -170,7 +174,7 @@ class DocumentImageGenerator():
         vector = np.linspace(low_val, high_low, flat_mesh.shape[1])
         
         # Apply wavy transformation
-        flat_mesh[1] += amplitude * np.sin(frequency * flat_mesh[0]) * vector
+        flat_mesh[1] += amplitude * np.sin(frequency * flat_mesh[0] + random.randint(0, 1000)) * vector
         
         # Apply 3D rotation
         transformed_mesh = rotation_matrix @ flat_mesh
@@ -220,11 +224,11 @@ class DocumentImageGenerator():
         self._convert_ods_to_pdf()
         self._convert_pdf_to_jpeg()
 
-        for img in self._images:
+        for i in range(len(self._images)):
 
             # Add padding to prevent cropping
             padding = random.randint(400, 550)
-            scaled_image = self._add_padding(img, padding)
+            scaled_image = self._add_padding(self._images[i], padding)
 
             # Get new dimensions
             height, width = scaled_image.shape[:2]
@@ -234,7 +238,7 @@ class DocumentImageGenerator():
 
             # Define transformations
             amplitude = random.randint(0, 100)  # Pixel displacement
-            frequency = random.uniform(0.5, 3.0) * np.pi / width  # Frequency relative to width
+            frequency = random.uniform(0.5, 3.0) * np.pi / width # Frequency relative to width
             rotation_matrix = self._get_rotation_matrix(random.randint(-10, 10),
                                                 random.randint(-10, 10),
                                                 random.randint(-5, 5))
@@ -247,5 +251,5 @@ class DocumentImageGenerator():
             y_map_final = y_map_final.astype(np.float32)
 
             # Remap image using the transformed mesh
-            img = cv2.remap(scaled_image, x_map_final, y_map_final, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+            self._images[i] = cv2.remap(scaled_image, x_map_final, y_map_final, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
             self._grids.append((x_map_final, y_map_final))
