@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Nazwa pliku: data_generator.py
-Autor: Maciej Kubiś
+File name: data_generator.py
+Author: Maciej Kubiś
 Date: 2025-03-19
 Description: This module contains a data generator class that generates images with wavy distortions and 3D rotations.
 """
@@ -38,6 +38,12 @@ class DocumentImageGenerator():
 
     def __str__(self):
         return "DocumentImageGenerator"
+    
+    def __len__(self):
+        return len(self._images)
+    
+    def __getitem__(self, index):
+        return self._images[index], self._grids[index]
     
     def _generate_random_font_style(self):
         """Generate a random font style for table cells."""
@@ -218,7 +224,7 @@ class DocumentImageGenerator():
         with open(file_path, "r", encoding="utf-8") as file:
             self._text = file.read().split()
     
-    def generateNewImages(self):
+    def generate_new_images(self):
         """Generates new images using the data generator."""
         self._generate_random_file_content()
         self._convert_ods_to_pdf()
@@ -253,3 +259,9 @@ class DocumentImageGenerator():
             # Remap image using the transformed mesh
             self._images[i] = cv2.remap(scaled_image, x_map_final, y_map_final, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
             self._grids.append((x_map_final, y_map_final))
+
+    def regenerate_data(self):
+        """Regenerates images and deformation grids using the data generator."""
+        self.delete_images()
+        self.delete_grids()
+        self.generate_new_images()
