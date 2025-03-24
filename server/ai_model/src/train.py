@@ -34,13 +34,12 @@ def train_model(model,
     Returns:
         The trained model and best validation loss
     """
-
     train_losses = []
     val_losses = []
     best_val_loss = float('inf')
 
     log_file = open("../logs/train.log", "w")
-    
+
     log_file.write(f"Starting training for {epochs} epochs...")
     
     for epoch in range(epochs):

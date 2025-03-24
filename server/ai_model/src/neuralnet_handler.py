@@ -32,12 +32,18 @@ class NeuralNetHandler:
         """
         self._device = torch.device(device)
         print(f"Using device: {self._device}")
+
         self._epochs = epochs
         self._learning_rate = learning_rate
         self._num_batches = num_batches
-        self._generator = self.set_generator(generator)
-        self._model = self.set_model(model)
+
+        self._generator = None
+        self.set_generator(generator)
+
         self._optimizer = None
+        self._model = None
+        self.set_model(model)
+
         self._criterion = torch.nn.MSELoss()
         self._train_losses = []
         self._val_losses = []
@@ -58,9 +64,7 @@ class NeuralNetHandler:
                 self._model = torch.load(model).to(self._device)
             else:
                 ValueError("Invalid model type. Please provide a valid PyTorch model or path to a saved model.")
-            
             self._optimizer = torch.optim.Adam(self._model.parameters(), lr=self._learning_rate)
-
         else:
             print("Model is None. Please provide a valid model using set_model() method.")
 
@@ -71,7 +75,7 @@ class NeuralNetHandler:
         Params:
             generator: DocumentImageGenerator instance
         """
-        if isinstance(generator, DocumentImageGenerator):
+        if generator.__class__.__name__ == "DocumentImageGenerator":
             self._generator = generator
         else:
             ValueError("Invalid generator type. Please provide a valid DocumentImageGenerator instance.")

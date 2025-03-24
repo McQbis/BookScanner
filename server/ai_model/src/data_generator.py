@@ -114,7 +114,7 @@ class DocumentImageGenerator():
         doc.spreadsheet.addElement(table)
         
         # Save the document
-        doc.save("server/ai_model/src/assets/document.ods")
+        doc.save("document.ods")
 
     def _convert_ods_to_pdf(self):
         """Convert an ODS file to PDF using LibreOffice CLI."""
@@ -122,10 +122,10 @@ class DocumentImageGenerator():
         try:
             subprocess.run([
                 "libreoffice", "--headless", 
-                "--convert-to", "pdf", "server/ai_model/src/assets/document.ods", 
-                "--outdir", "server/ai_model/src/assets"
+                "--convert-to", "pdf", "document.ods", 
+                "--outdir", "."
             ], check=True)
-            os.remove("server/ai_model/src/assets/document.ods")
+            os.remove("document.ods")
         except subprocess.CalledProcessError as e:
             print(f"Error during conversion: {e}")
 
@@ -133,12 +133,12 @@ class DocumentImageGenerator():
         """Convert all pages of a PDF file to JPEG using pdf2image."""
         
         try:
-            images = convert_from_path("server/ai_model/src/assets/document.pdf")
+            images = convert_from_path("document.pdf")
             for i, image in enumerate(images):
-                image.save(f"server/ai_model/src/assets/document_page_{i + 1}.jpg", "JPEG")
-                self._images.append(cv2.imread(f"server/ai_model/src/assets/document_page_{i + 1}.jpg"))
-                os.remove(f"server/ai_model/src/assets/document_page_{i + 1}.jpg")
-            os.remove("server/ai_model/src/assets/document.pdf")
+                image.save(f"document_page_{i + 1}.jpg", "JPEG")
+                self._images.append(cv2.imread(f"document_page_{i + 1}.jpg"))
+                os.remove(f"document_page_{i + 1}.jpg")
+            os.remove("document.pdf")
         except Exception as e:
             print(f"Error during conversion: {e}")
 
