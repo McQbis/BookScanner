@@ -1,0 +1,6 @@
+torch
+matplotlib
+odfpy
+numpy
+pdf2image
+opencv-python-headless
