@@ -29,7 +29,6 @@ class DocumentImageGenerator():
         Params:
             file_path (str): Path to a text file containing a list of words.
         """
-
         self._images = []
         self._grids = []
         
@@ -118,7 +117,6 @@ class DocumentImageGenerator():
 
     def _convert_ods_to_pdf(self):
         """Convert an ODS file to PDF using LibreOffice CLI."""
-        
         try:
             subprocess.run([
                 "libreoffice", "--headless", 
@@ -131,7 +129,6 @@ class DocumentImageGenerator():
 
     def _convert_pdf_to_jpeg(self):
         """Convert all pages of a PDF file to JPEG using pdf2image."""
-        
         try:
             images = convert_from_path("document.pdf")
             for i, image in enumerate(images):
