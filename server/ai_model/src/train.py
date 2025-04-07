@@ -59,8 +59,7 @@ def train_model(model,
                 batch_loss = 0.0
                 
                 for img, (x_grid, y_grid) in zip(images, grids):
-                    img_tensor = torch.from_numpy(img).permute(2, 0, 1).float().to(device)
-                    img_tensor = img_tensor.unsqueeze(0)
+                    img_tensor = torch.from_numpy(img).unsqueeze(0).unsqueeze(0).float().to(device)
                     
                     x_grid_tensor = torch.from_numpy(x_grid).unsqueeze(0).unsqueeze(0).to(device)
                     y_grid_tensor = torch.from_numpy(y_grid).unsqueeze(0).unsqueeze(0).to(device)
