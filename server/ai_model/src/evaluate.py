@@ -54,9 +54,9 @@ def evaluate_model(model, generator, device, criterion, num_val_batches):
             
             file_log.write(f"Validation Batch {batch_idx+1}/{num_val_batches}, Loss: {avg_batch_loss:.6f}")
     
-    # Average validation loss
-    avg_val_loss = total_val_loss / num_val_batches if num_val_batches > 0 else 0
-    
-    file_log.write(f"Validation completed, Avg Loss: {avg_val_loss:.6f}")
+        # Average validation loss
+        avg_val_loss = total_val_loss / num_val_batches if num_val_batches > 0 else 0
+        
+        file_log.write(f"Validation completed, Avg Loss: {avg_val_loss:.6f}")
     
     return avg_val_loss
