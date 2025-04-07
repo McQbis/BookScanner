@@ -51,6 +51,10 @@ export default function LoginScreen() {
       <TouchableOpacity onPress={() => router.push('/register')}>
         <Text style={[styles.link, { color: Colors.primary }]}>Don't have an account? Register</Text>
       </TouchableOpacity>
+      {/* For implementation of photo page only*/}
+      <TouchableOpacity onPress={() => router.push('/photo')}>
+        <Text style={[styles.link, { color: Colors.primary }]}>Skip</Text>
+      </TouchableOpacity>
     </KeyboardAvoidingView>
   );
 }
