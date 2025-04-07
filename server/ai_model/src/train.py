@@ -17,7 +17,8 @@ def train_model(model,
                 epochs, 
                 criterion, 
                 optimizer, 
-                num_batches):
+                num_batches,
+                name):
     """
     Train the U-Net model using dynamically generated document images.
     
@@ -29,6 +30,7 @@ def train_model(model,
         criterion: Loss function
         optimizer: Optimizer instance
         num_batches: Number of mini batches to train on
+        name: Name of the model
     
     Returns:
         The trained model, best validation loss and lists of training and validation losses.
@@ -85,7 +87,7 @@ def train_model(model,
             
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                torch.save(model.state_dict(), "best_model.pth")
+                torch.save(model.state_dict(), "../models/" + name + ".pth")
                 log_file.write(f"New best model saved with validation loss: {val_loss:.6f}\n")
                 early_stop_counter = 0
             else:
