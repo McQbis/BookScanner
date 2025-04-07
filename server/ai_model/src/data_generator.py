@@ -254,7 +254,12 @@ class DocumentImageGenerator():
             y_map_final = y_map_final.astype(np.float32)
 
             # Remap image using the transformed mesh
-            self._images[i] = cv2.remap(scaled_image, x_map_final, y_map_final, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+            self._images[i] = cv2.remap(scaled_image, 
+                                        x_map_final, 
+                                        y_map_final, 
+                                        interpolation=cv2.INTER_LINEAR, 
+                                        borderMode=cv2.BORDER_CONSTANT).astype(np.float32) / 255.0
+    
             self._grids.append((x_map_final, y_map_final))
 
     def regenerate_data(self):
