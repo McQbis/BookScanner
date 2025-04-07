@@ -5,7 +5,9 @@
 
 export const Colors = {
   primary: '#007AFF',
-  background: '#ffffff',
-  text: '#111111',
+  backgroundLight: '#ffffff',
+  backgroundDark: '#000000',
+  textLight: '#111111',
+  textDark: '#ffffff',
   gray: '#888888',
 };
