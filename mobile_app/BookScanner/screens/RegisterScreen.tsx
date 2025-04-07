@@ -1,12 +1,14 @@
 import { View, Text, StyleSheet } from 'react-native';
-export default function NotFound() {
+
+export default function RegisterScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>404 - Page not found</Text>
+      <Text style={styles.text}>Register Page (to be implemented)</Text>
     </View>
   );
 }
+
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  text: { fontSize: 24, fontWeight: 'bold' },
+  text: { fontSize: 18 },
 });
