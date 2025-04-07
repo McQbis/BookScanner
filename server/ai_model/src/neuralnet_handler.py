@@ -19,7 +19,8 @@ class NeuralNetHandler:
                  device: str=None, 
                  epochs: int=30, 
                  learning_rate: float=0.001,
-                 num_batches: int=300):
+                 num_batches: int=300, 
+                 name: str="model"):
         """
         Initialize the NeuralNetHandler class.
         
@@ -29,6 +30,8 @@ class NeuralNetHandler:
             device: Device to run training on (CPU or GPU)
             epochs: Number of training epochs
             learning_rate: Learning rate for optimizer
+            num_batches: Number of mini batches to train on
+            name: Name of the model
         """
         self._device = torch.device(device)
         print(f"Using device: {self._device}")
@@ -36,20 +39,21 @@ class NeuralNetHandler:
         self._epochs = epochs
         self._learning_rate = learning_rate
         self._num_batches = num_batches
+        self._name = name
 
         self._generator = None
         self.set_generator(generator)
 
         self._optimizer = None
         self._model = None
-        self.set_model(model)
+        self.set_model(model, name)
 
         self._criterion = torch.nn.MSELoss()
         self._train_losses = []
         self._val_losses = []
         self._best_val_loss = float('inf')
 
-    def set_model(self, model):
+    def set_model(self, model, name: str):
         """
         Set the model to use for training and evaluation.
         
@@ -67,6 +71,8 @@ class NeuralNetHandler:
             self._optimizer = torch.optim.Adam(self._model.parameters(), lr=self._learning_rate)
         else:
             print("Model is None. Please provide a valid model using set_model() method.")
+
+        self._name = name
 
     def set_generator(self, generator):
         """
@@ -120,7 +126,8 @@ class NeuralNetHandler:
                                         self._epochs, 
                                         self._criterion, 
                                         self._optimizer, 
-                                        self._num_batches)
+                                        self._num_batches,
+                                        self._name)
         
     def evaluate(self):
         """
