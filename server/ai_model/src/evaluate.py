@@ -32,7 +32,7 @@ def evaluate_model(model, generator, device, criterion, num_val_batches):
             # Process each image in the batch
             for img, (x_grid, y_grid) in zip(images, grids):
                 # Convert numpy arrays to PyTorch tensors
-                img_tensor = torch.from_numpy(img).permute(2, 0, 1).float().to(device)  # Convert from HWC to CHW
+                img_tensor = torch.from_numpy(img).unsqueeze(0).unsqueeze(0).float().to(device)  # Convert from HWC to CHW
                 img_tensor = img_tensor.unsqueeze(0)  # Add batch dimension
                 
                 x_grid_tensor = torch.from_numpy(x_grid).unsqueeze(0).unsqueeze(0).to(device)
