@@ -1,15 +1,23 @@
-import { useColorScheme } from 'react-native';
 import Colors from '@/constants/Colors';
+import { useTheme } from '@/hooks/ThemeContext';
 
 const useThemeColors = () => {
-  const colorScheme = useColorScheme();
+  try {
+    const { theme } = useTheme();
 
-  const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
+    const selected = theme === 'dark' ? Colors.dark : Colors.light;
 
-  return {
-    ...theme,
-    isDark: colorScheme === 'dark',
-  };
+    return {
+      ...selected,
+      isDark: theme === 'dark',
+    };
+  } catch (error) {
+    console.error('useThemeColors must be used within a ThemeProvider:', error);
+    return {
+      ...Colors.light,
+      isDark: false,
+    };
+  }
 };
 
 export default useThemeColors;

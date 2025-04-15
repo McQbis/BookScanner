@@ -6,17 +6,22 @@ type Props = {
   onPress: () => void;
 };
 
-const {background, text, primary, card, border, notification} = useThemeColors();
+const PrimaryButton = ({ title, onPress }: Props) => {
+  const { primary, text } = useThemeColors();
 
-const PrimaryButton = ({ title, onPress }: Props) => (
-  <Pressable onPress={onPress} style={styles.button} accessibilityRole="button">
-    <Text style={styles.label}>{title}</Text>
-  </Pressable>
-);
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[styles.button, { backgroundColor: primary }]}
+      accessibilityRole="button"
+    >
+      <Text style={[styles.label, { color: text }]}>{title}</Text>
+    </Pressable>
+  );
+};
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: primary,
     padding: 14,
     borderRadius: 10,
     alignItems: 'center',
