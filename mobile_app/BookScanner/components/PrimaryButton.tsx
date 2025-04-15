@@ -1,10 +1,12 @@
 import { Pressable, Text, StyleSheet } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import useThemeColors from '@/hooks/useThemeColors';
 
 type Props = {
   title: string;
   onPress: () => void;
 };
+
+const {background, text, primary, card, border, notification} = useThemeColors();
 
 const PrimaryButton = ({ title, onPress }: Props) => (
   <Pressable onPress={onPress} style={styles.button} accessibilityRole="button">
@@ -14,7 +16,7 @@ const PrimaryButton = ({ title, onPress }: Props) => (
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: Colors.primary,
+    backgroundColor: primary,
     padding: 14,
     borderRadius: 10,
     alignItems: 'center',
