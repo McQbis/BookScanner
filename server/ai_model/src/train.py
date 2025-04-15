@@ -17,7 +17,8 @@ def train_model(model,
                 epochs, 
                 criterion, 
                 optimizer, 
-                num_batches):
+                num_batches,
+                name):
     """
     Train the U-Net model using dynamically generated document images.
     
@@ -29,6 +30,7 @@ def train_model(model,
         criterion: Loss function
         optimizer: Optimizer instance
         num_batches: Number of mini batches to train on
+        name: Name of the model
     
     Returns:
         The trained model, best validation loss and lists of training and validation losses.
@@ -57,8 +59,7 @@ def train_model(model,
                 batch_loss = 0.0
                 
                 for img, (x_grid, y_grid) in zip(images, grids):
-                    img_tensor = torch.from_numpy(img).permute(2, 0, 1).float().to(device)
-                    img_tensor = img_tensor.unsqueeze(0)
+                    img_tensor = torch.from_numpy(img).unsqueeze(0).unsqueeze(0).float().to(device)
                     
                     x_grid_tensor = torch.from_numpy(x_grid).unsqueeze(0).unsqueeze(0).to(device)
                     y_grid_tensor = torch.from_numpy(y_grid).unsqueeze(0).unsqueeze(0).to(device)
@@ -80,12 +81,12 @@ def train_model(model,
             train_losses.append(avg_epoch_loss)
             log_file.write(f"Epoch {epoch+1}/{epochs} completed, Avg Loss: {avg_epoch_loss:.6f}\n")
             
-            val_loss = evaluate_model(model, generator, device, criterion, val_losses, num_batches)
+            val_loss = evaluate_model(model, generator, device, criterion, num_batches)
             val_losses.append(val_loss)
             
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                torch.save(model.state_dict(), "best_model.pth")
+                torch.save(model.state_dict(), "../models/" + name + ".pth")
                 log_file.write(f"New best model saved with validation loss: {val_loss:.6f}\n")
                 early_stop_counter = 0
             else:
