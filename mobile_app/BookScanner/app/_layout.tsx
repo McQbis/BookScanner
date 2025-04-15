@@ -1,4 +1,6 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import ThemeToggle from '@/components/ThemeToggle';
+import { ThemeProvider } from '@/hooks/ThemeContext';
+import { DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -23,13 +25,14 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider>
       <Stack>
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ title: 'Register' }} />
         <Stack.Screen name="photo" options={{ title: 'Take Photo' }} />
         <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
       </Stack>
+      <ThemeToggle />
       <StatusBar style="auto" />
     </ThemeProvider>
   );
