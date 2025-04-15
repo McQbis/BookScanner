@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { View, Image, StyleSheet, Alert, Text } from 'react-native';
 import PrimaryButton from '@/components/PrimaryButton';
 import * as ImagePicker from 'expo-image-picker';
+import useThemeColors from '@/hooks/useThemeColors';
 
 export default function PhotoScreen() {
+  const {background, text, primary, card, border, notification} = useThemeColors();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   const handlePickPhoto = async () => {

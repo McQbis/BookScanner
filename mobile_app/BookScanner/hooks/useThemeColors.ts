@@ -1,11 +1,15 @@
 import { useColorScheme } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import Colors from '@/constants/Colors';
 
-export const useThemeColors = () => {
+const useThemeColors = () => {
   const colorScheme = useColorScheme();
+
+  const theme = colorScheme === 'dark' ? Colors.dark : Colors.light;
+
   return {
-    background: colorScheme === 'dark' ? Colors.backgroundDark : Colors.backgroundLight,
-    text: colorScheme === 'dark' ? Colors.textDark : Colors.textLight,
-    gray: Colors.gray,
+    ...theme,
+    isDark: colorScheme === 'dark',
   };
 };
+
+export default useThemeColors;

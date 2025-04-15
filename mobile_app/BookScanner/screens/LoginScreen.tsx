@@ -5,8 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'expo-router';
 import Input from '@/components/Input';
 import PrimaryButton from '@/components/PrimaryButton';
-import { useThemeColors } from '@/hooks/useThemeColors';
-import { Colors } from '@/constants/Colors';
+import useThemeColors from '@/hooks/useThemeColors';
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -16,7 +15,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function LoginScreen() {
-  const { background, text, gray } = useThemeColors();
+  const {background, text, primary, card, border, notification} = useThemeColors();
   const router = useRouter();
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -49,11 +48,11 @@ export default function LoginScreen() {
       <PrimaryButton title="Login" onPress={handleSubmit(onSubmit)} />
 
       <TouchableOpacity onPress={() => router.push('/register')}>
-        <Text style={[styles.link, { color: Colors.primary }]}>Don't have an account? Register</Text>
+        <Text style={[styles.link, { color: primary }]}>Don't have an account? Register</Text>
       </TouchableOpacity>
       {/* For implementation of photo page only*/}
       <TouchableOpacity onPress={() => router.push('/photo')}>
-        <Text style={[styles.link, { color: Colors.primary }]}>Skip</Text>
+        <Text style={[styles.link, { color: primary }]}>Skip</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );
