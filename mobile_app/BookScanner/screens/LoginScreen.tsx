@@ -18,17 +18,22 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function LoginScreen() {
-  const {background, text, primary, card, border, notification} = useThemeColors();
+  const { background, primary } = useThemeColors();
   const { login } = useAuth();
   const router = useRouter();
-  const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
   const onSubmit = async (data: FormData) => {
     try {
       const response = await api.post('token/', {
-        email: data.email,
+        username: data.email,
         password: data.password,
       });
 
@@ -36,23 +41,32 @@ export default function LoginScreen() {
       await login(access, { email: data.email });
 
     } catch (err: any) {
-      console.error('Login error:', err);
+      console.error('Login error:', err?.response?.data || err.message);
       Toast.show({
         type: 'error',
         position: 'bottom',
         text1: 'Login Failed',
-        text2: 'Incorrect email or password',
+        text2: err.response?.data?.detail || 'Incorrect email or password',
       });
     }
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.container, { backgroundColor: background }]}>      
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={[styles.container, { backgroundColor: background }]}
+    >
       <Controller
         control={control}
         name="email"
         render={({ field: { onChange, value } }) => (
-          <Input placeholder="Email" value={value} onChangeText={onChange} keyboardType="email-address" autoCapitalize="none" />
+          <Input
+            placeholder="Email"
+            value={value}
+            onChangeText={onChange}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
         )}
       />
       {errors.email && <Text style={[styles.error, { color: 'red' }]}>{errors.email.message}</Text>}
@@ -70,10 +84,6 @@ export default function LoginScreen() {
 
       <TouchableOpacity onPress={() => router.push('/register')}>
         <Text style={[styles.link, { color: primary }]}>Don't have an account? Register</Text>
-      </TouchableOpacity>
-      {/* For implementation of photo page only*/}
-      <TouchableOpacity onPress={() => router.push('/photo')}>
-        <Text style={[styles.link, { color: primary }]}>Skip</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );
