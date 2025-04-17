@@ -4,3 +4,10 @@ odfpy
 numpy
 pdf2image
 opencv-python-headless
+python-decouple
+django 
+djangorestframework 
+psycopg2-binary 
+python-decouple 
+Pillow 
+djangorestframework-simplejwt
