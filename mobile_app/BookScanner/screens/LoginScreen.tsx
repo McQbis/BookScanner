@@ -6,6 +6,9 @@ import { useRouter } from 'expo-router';
 import Input from '@/components/Input';
 import PrimaryButton from '@/components/PrimaryButton';
 import useThemeColors from '@/hooks/useThemeColors';
+import { useAuth } from '@/hooks/useAuth';
+import api from '@/lib/api';
+import Toast from 'react-native-toast-message';
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -16,13 +19,31 @@ type FormData = z.infer<typeof schema>;
 
 export default function LoginScreen() {
   const {background, text, primary, card, border, notification} = useThemeColors();
+  const { login } = useAuth();
   const router = useRouter();
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = (data: FormData) => {
-    router.push('/photo');
+  const onSubmit = async (data: FormData) => {
+    try {
+      const response = await api.post('token/', {
+        email: data.email,
+        password: data.password,
+      });
+
+      const { access } = response.data;
+      await login(access, { email: data.email });
+
+    } catch (err: any) {
+      console.error('Login error:', err);
+      Toast.show({
+        type: 'error',
+        position: 'bottom',
+        text1: 'Login Failed',
+        text2: 'Incorrect email or password',
+      });
+    }
   };
 
   return (
