@@ -16,13 +16,14 @@ import * as ImagePicker from 'expo-image-picker';
 import useThemeColors from '@/hooks/useThemeColors';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useAuth } from '@/hooks/useAuth';
+import api from '@/lib/api';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
 }
 
 export default function PhotoScreen() {
-  const { user, logout } = useAuth();
+  const { token, logout } = useAuth();
   const [showDialog, setShowDialog] = useState(false);
   const [logoutDialog, setLogoutDialog] = useState(false);
   const { background, text, primary, card, border } = useThemeColors();
@@ -87,14 +88,37 @@ export default function PhotoScreen() {
         />
       ) : (
         <ConfirmDialog
-        visible={showDialog}
-        message="Are you sure you want to delete account?"
-        onCancel={() => setShowDialog(false)}
-        onConfirm={() => {
-          setShowDialog(false);
-          logout()
-        }}
-      />
+          visible={showDialog}
+          message="Are you sure you want to delete account?"
+          onCancel={() => setShowDialog(false)}
+          onConfirm={async () => {
+            try {
+              const response = await api.delete('/delete-account/', {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+              
+              if (response.status === 204) {
+                setShowDialog(false);            
+                logout();  
+                Alert.alert('Success', 'Your account has been deleted.');
+              }
+            } catch (error) {
+              if ((error as any).response) {
+                console.error('Error response:', (error as any).response);
+                Alert.alert('Error', 'Server error occurred while deleting your account.');
+              } else if ((error as any).request) {
+                console.error('No response received:', (error as any).request);
+                Alert.alert('Network Error', 'Could not reach the server. Please check your network connection.');
+              } else {
+                console.error('Error message:', (error as any).message);
+                Alert.alert('Error', 'An unknown error occurred.');
+              }
+              setShowDialog(false);
+            }
+          }}
+        />
       )}
 
       {photoUri ? (
