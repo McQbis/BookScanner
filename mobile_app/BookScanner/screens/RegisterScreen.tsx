@@ -35,7 +35,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function RegisterScreen() {
-  const { background, text, primary } = useThemeColors();
+  const { background, primary } = useThemeColors();
   const { login } = useAuth();
   const router = useRouter();
   const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
