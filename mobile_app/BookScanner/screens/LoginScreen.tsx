@@ -6,6 +6,9 @@ import { useRouter } from 'expo-router';
 import Input from '@/components/Input';
 import PrimaryButton from '@/components/PrimaryButton';
 import useThemeColors from '@/hooks/useThemeColors';
+import { useAuth } from '@/hooks/useAuth';
+import api from '@/lib/api';
+import Toast from 'react-native-toast-message';
 
 const schema = z.object({
   email: z.string().email('Invalid email'),
@@ -15,23 +18,55 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function LoginScreen() {
-  const {background, text, primary, card, border, notification} = useThemeColors();
+  const { background, primary } = useThemeColors();
+  const { login } = useAuth();
   const router = useRouter();
-  const { control, handleSubmit, formState: { errors } } = useForm<FormData>({
+
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
   });
 
-  const onSubmit = (data: FormData) => {
-    router.push('/photo');
+  const onSubmit = async (data: FormData) => {
+    try {
+      const response = await api.post('token/', {
+        username: data.email,
+        password: data.password,
+      });
+
+      const { access } = response.data;
+      await login(access, { email: data.email });
+
+    } catch (err: any) {
+      console.error('Login error:', err?.response?.data || err.message);
+      Toast.show({
+        type: 'error',
+        position: 'bottom',
+        text1: 'Login Failed',
+        text2: err.response?.data?.detail || 'Incorrect email or password',
+      });
+    }
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.container, { backgroundColor: background }]}>      
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={[styles.container, { backgroundColor: background }]}
+    >
       <Controller
         control={control}
         name="email"
         render={({ field: { onChange, value } }) => (
-          <Input placeholder="Email" value={value} onChangeText={onChange} keyboardType="email-address" autoCapitalize="none" />
+          <Input
+            placeholder="Email"
+            value={value}
+            onChangeText={onChange}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
         )}
       />
       {errors.email && <Text style={[styles.error, { color: 'red' }]}>{errors.email.message}</Text>}
@@ -49,10 +84,6 @@ export default function LoginScreen() {
 
       <TouchableOpacity onPress={() => router.push('/register')}>
         <Text style={[styles.link, { color: primary }]}>Don't have an account? Register</Text>
-      </TouchableOpacity>
-      {/* For implementation of photo page only*/}
-      <TouchableOpacity onPress={() => router.push('/photo')}>
-        <Text style={[styles.link, { color: primary }]}>Skip</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );

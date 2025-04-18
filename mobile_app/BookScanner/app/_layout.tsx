@@ -1,12 +1,13 @@
 import ThemeToggle from '@/components/ThemeToggle';
 import { ThemeProvider } from '@/hooks/ThemeContext';
-import { DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import { AuthProvider } from '@/hooks/useAuth';
+import Toast from 'react-native-toast-message';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -25,15 +26,18 @@ export default function RootLayout() {
   if (!loaded) return null;
 
   return (
-    <ThemeProvider>
-      <Stack>
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ title: 'Register' }} />
-        <Stack.Screen name="photo" options={{ title: 'Take Photo' }} />
-        <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
-      </Stack>
-      <ThemeToggle />
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <AuthProvider>
+      <ThemeProvider>
+        <Stack>
+          <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="register" options={{ title: 'Register', headerShown: false }} />
+          <Stack.Screen name="photo" options={{ title: 'Take Photo', headerShown: false }} />
+          <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
+        </Stack>
+        <ThemeToggle />
+        <StatusBar style="auto" />
+        <Toast />
+      </ThemeProvider>
+    </AuthProvider>
   );
 }

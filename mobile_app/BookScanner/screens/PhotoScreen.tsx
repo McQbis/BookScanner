@@ -1,12 +1,39 @@
 import { useState } from 'react';
-import { View, Image, StyleSheet, Alert, Text } from 'react-native';
+import {
+  View,
+  Image,
+  StyleSheet,
+  Alert,
+  Text,
+  TouchableOpacity,
+  LayoutAnimation,
+  Platform,
+  UIManager,
+  ScrollView,
+} from 'react-native';
 import PrimaryButton from '@/components/PrimaryButton';
 import * as ImagePicker from 'expo-image-picker';
 import useThemeColors from '@/hooks/useThemeColors';
+import ConfirmDialog from '@/components/ConfirmDialog';
+import { useAuth } from '@/hooks/useAuth';
+import api from '@/lib/api';
+
+if (Platform.OS === 'android') {
+  UIManager.setLayoutAnimationEnabledExperimental?.(true);
+}
 
 export default function PhotoScreen() {
-  const {background, text, primary, card, border, notification} = useThemeColors();
+  const { token, logout } = useAuth();
+  const [showDialog, setShowDialog] = useState(false);
+  const [logoutDialog, setLogoutDialog] = useState(false);
+  const { background, text, primary, border } = useThemeColors();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [panelVisible, setPanelVisible] = useState(true);
+
+  const togglePanel = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setPanelVisible((prev) => !prev);
+  };
 
   const handlePickPhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -25,20 +52,98 @@ export default function PhotoScreen() {
     }
   };
 
+  const handleAccountDelete = async () => {
+    try {
+      const response = await api.delete('/delete-account/', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (response.status === 204) {
+        setShowDialog(false);
+        logout();
+        Alert.alert('Success', 'Your account has been deleted.');
+      }
+    } catch (error: any) {
+      if (error.response) {
+        console.error('Error response:', error.response);
+        Alert.alert('Error', 'Server error occurred while deleting your account.');
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+        Alert.alert('Network Error', 'Could not reach the server. Please check your network connection.');
+      } else {
+        console.error('Error message:', error.message);
+        Alert.alert('Error', 'An unknown error occurred.');
+      }
+      setShowDialog(false);
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: background }]}>
+      {panelVisible ? (
+        <View style={[styles.panel, { backgroundColor: background, borderColor: border }]}>
+          <PrimaryButton title="Take a photo" onPress={handlePickPhoto} />
+          <PrimaryButton title="Choose photo from gallery" onPress={() => Alert.alert('Option 2')} />
+          <PrimaryButton title="Logout" onPress={() => {setShowDialog(true); setLogoutDialog(true);}} />
+          <PrimaryButton title="Delete account" onPress={() => {setShowDialog(true); setLogoutDialog(false);}} />
+          <TouchableOpacity onPress={togglePanel} style={styles.toggle}>
+            <Text style={{ color: primary, fontWeight: '600', alignSelf: 'center' }}>
+              Hide Options
+            </Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={[styles.panel, { backgroundColor: background, borderColor: border }]}>
+          <TouchableOpacity onPress={togglePanel} style={styles.toggle}>
+            <Text style={{ color: primary, fontWeight: '600', alignSelf: 'center' }}>
+                Show Options
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <ConfirmDialog
+        visible={showDialog}
+        message={logoutDialog ? "Are you sure you want to logout?" : "Are you sure you want to delete account?"}
+        onCancel={() => setShowDialog(false)}
+        onConfirm={logoutDialog ? logout : handleAccountDelete}
+      />
+
       {photoUri ? (
         <Image source={{ uri: photoUri }} style={styles.image} />
       ) : (
-        <Text style={styles.placeholder}>No photo taken yet</Text>
+        <Text style={[styles.placeholder, { color: text }]}>No photo taken yet</Text>
       )}
-      <PrimaryButton title="Take a Photo" onPress={handlePickPhoto} />
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 16 },
-  image: { width: 200, height: 200, marginBottom: 20, borderRadius: 12 },
-  placeholder: { marginBottom: 20, fontSize: 16, color: '#888' },
+  container: {
+    padding: 16,
+    paddingTop: 40,
+    alignItems: 'center',
+  },
+  image: {
+    width: 200,
+    height: 200,
+    marginVertical: 20,
+    borderRadius: 12,
+  },
+  placeholder: {
+    marginVertical: 20,
+    fontSize: 16,
+  },
+  toggle: {
+    marginBottom: 0,
+  },
+  panel: {
+    width: '100%',
+    marginBottom: 12,
+    padding: 16,
+    borderBottomWidth: 1,
+    gap: 12,
+  },
 });
