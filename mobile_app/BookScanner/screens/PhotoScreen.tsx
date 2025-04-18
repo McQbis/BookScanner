@@ -26,7 +26,7 @@ export default function PhotoScreen() {
   const { token, logout } = useAuth();
   const [showDialog, setShowDialog] = useState(false);
   const [logoutDialog, setLogoutDialog] = useState(false);
-  const { background, text, primary, card, border } = useThemeColors();
+  const { background, text, primary, border } = useThemeColors();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [panelVisible, setPanelVisible] = useState(true);
 
@@ -49,6 +49,34 @@ export default function PhotoScreen() {
 
     if (!result.canceled && result.assets.length > 0) {
       setPhotoUri(result.assets[0].uri);
+    }
+  };
+
+  const handleAccountDelete = async () => {
+    try {
+      const response = await api.delete('/delete-account/', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      if (response.status === 204) {
+        setShowDialog(false);
+        logout();
+        Alert.alert('Success', 'Your account has been deleted.');
+      }
+    } catch (error: any) {
+      if (error.response) {
+        console.error('Error response:', error.response);
+        Alert.alert('Error', 'Server error occurred while deleting your account.');
+      } else if (error.request) {
+        console.error('No response received:', error.request);
+        Alert.alert('Network Error', 'Could not reach the server. Please check your network connection.');
+      } else {
+        console.error('Error message:', error.message);
+        Alert.alert('Error', 'An unknown error occurred.');
+      }
+      setShowDialog(false);
     }
   };
 
@@ -76,50 +104,12 @@ export default function PhotoScreen() {
         </View>
       )}
 
-      {logoutDialog ? (
-        <ConfirmDialog
-          visible={showDialog}
-          message="Are you sure you want to logout?"
-          onCancel={() => setShowDialog(false)}
-          onConfirm={() => {
-            setShowDialog(false);
-            logout()
-          }}
-        />
-      ) : (
-        <ConfirmDialog
-          visible={showDialog}
-          message="Are you sure you want to delete account?"
-          onCancel={() => setShowDialog(false)}
-          onConfirm={async () => {
-            try {
-              const response = await api.delete('/delete-account/', {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              });
-              
-              if (response.status === 204) {
-                setShowDialog(false);            
-                logout();  
-                Alert.alert('Success', 'Your account has been deleted.');
-              }
-            } catch (error) {
-              if ((error as any).response) {
-                console.error('Error response:', (error as any).response);
-                Alert.alert('Error', 'Server error occurred while deleting your account.');
-              } else if ((error as any).request) {
-                console.error('No response received:', (error as any).request);
-                Alert.alert('Network Error', 'Could not reach the server. Please check your network connection.');
-              } else {
-                console.error('Error message:', (error as any).message);
-                Alert.alert('Error', 'An unknown error occurred.');
-              }
-              setShowDialog(false);
-            }
-          }}
-        />
-      )}
+      <ConfirmDialog
+        visible={showDialog}
+        message={logoutDialog ? "Are you sure you want to logout?" : "Are you sure you want to delete account?"}
+        onCancel={() => setShowDialog(false)}
+        onConfirm={logoutDialog ? logout : handleAccountDelete}
+      />
 
       {photoUri ? (
         <Image source={{ uri: photoUri }} style={styles.image} />
