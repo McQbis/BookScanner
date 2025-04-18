@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 type User = { email: string };
 type AuthContextType = {
   user: User | null;
+  token: string | null;
   login: (token: string, user: User) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
@@ -13,6 +14,7 @@ type AuthContextType = {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -20,8 +22,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const bootstrap = async () => {
       const token = await getToken();
       if (token) {
-        // optional: verify token here
-        setUser({ email: 'from_storage@example.com' }); // You can decode token if needed
+        setToken(token);
+        setUser({ email: 'from_storage@example.com' });
       }
       setIsLoading(false);
     };
@@ -30,18 +32,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (token: string, user: User) => {
     await saveToken(token);
+    setToken(token);
     setUser(user);
     router.replace('/photo');
   };
 
   const logout = async () => {
     await removeToken();
+    setToken(null);
     setUser(null);
     router.replace('/');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
