@@ -31,7 +31,7 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
           <Stack.Screen name="register" options={{ title: 'Register', headerShown: false }} />
-          <Stack.Screen name="photo" options={{ title: 'Take Photo' }} />
+          <Stack.Screen name="photo" options={{ title: 'Take Photo', headerShown: false }} />
           <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
         </Stack>
         <ThemeToggle />

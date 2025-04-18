@@ -7,7 +7,7 @@ const Colors = {
   light: {
     background: '#FFFFFF',
     text: '#1C1C1E',
-    primary: '#007AFF',
+    primary: '#0FBAFF',
     card: '#F2F2F7',
     border: '#D1D1D6',
     notification: '#FF3B30',
