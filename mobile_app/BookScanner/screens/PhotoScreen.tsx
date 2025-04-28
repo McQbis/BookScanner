@@ -1,21 +1,21 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   View,
-  Image,
-  StyleSheet,
   Alert,
   Text,
-  TouchableOpacity,
-  LayoutAnimation,
+  ScrollView,
+  StyleSheet,
   Platform,
   UIManager,
-  ScrollView,
+  LayoutAnimation,
+  TouchableOpacity,
 } from 'react-native';
-import PrimaryButton from '@/components/PrimaryButton';
 import * as ImagePicker from 'expo-image-picker';
-import useThemeColors from '@/hooks/useThemeColors';
+import PrimaryButton from '@/components/PrimaryButton';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import ZoomableImage from '@/components/ZoomableImage';
 import { useAuth } from '@/hooks/useAuth';
+import useThemeColors from '@/hooks/useThemeColors';
 import api from '@/lib/api';
 
 if (Platform.OS === 'android') {
@@ -24,16 +24,16 @@ if (Platform.OS === 'android') {
 
 export default function PhotoScreen() {
   const { token, logout } = useAuth();
+  const { background, text, primary, border } = useThemeColors();
+  const [photoUris, setPhotoUris] = useState<string[]>([]);
+  const [panelVisible, setPanelVisible] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [logoutDialog, setLogoutDialog] = useState(false);
-  const { background, text, primary, border } = useThemeColors();
-  const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [panelVisible, setPanelVisible] = useState(true);
 
-  const togglePanel = () => {
+  const togglePanel = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setPanelVisible((prev) => !prev);
-  };
+  }, []);
 
   const handlePickPhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -48,61 +48,63 @@ export default function PhotoScreen() {
     });
 
     if (!result.canceled && result.assets.length > 0) {
-      setPhotoUri(result.assets[0].uri);
+      setPhotoUris((prev) => [...prev, result.assets[0].uri]);
     }
   };
 
   const handleAccountDelete = async () => {
     try {
       const response = await api.delete('/delete-account/', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-  
+
       if (response.status === 204) {
         setShowDialog(false);
         logout();
         Alert.alert('Success', 'Your account has been deleted.');
       }
     } catch (error: any) {
-      if (error.response) {
-        console.error('Error response:', error.response);
-        Alert.alert('Error', 'Server error occurred while deleting your account.');
-      } else if (error.request) {
-        console.error('No response received:', error.request);
-        Alert.alert('Network Error', 'Could not reach the server. Please check your network connection.');
-      } else {
-        console.error('Error message:', error.message);
-        Alert.alert('Error', 'An unknown error occurred.');
-      }
+      console.error(error.response || error.request || error.message);
+      Alert.alert(
+        'Error',
+        error.response
+          ? 'Server error occurred while deleting your account.'
+          : error.request
+          ? 'Network Error. Please check your connection.'
+          : 'An unknown error occurred.'
+      );
       setShowDialog(false);
     }
   };
 
+  const handleDeletePhoto = useCallback((uriToDelete: string) => {
+    setPhotoUris((prev) => prev.filter((uri) => uri !== uriToDelete));
+  }, []);
+
+  const renderPanelButtons = () => (
+    <>
+      <PrimaryButton title="Take a photo" onPress={handlePickPhoto} />
+      <PrimaryButton title="Choose photo from gallery" onPress={() => Alert.alert('Option 2')} />
+      <PrimaryButton title="Logout" onPress={() => { setShowDialog(true); setLogoutDialog(true); }} />
+      <PrimaryButton title="Delete account" onPress={() => { setShowDialog(true); setLogoutDialog(false); }} />
+    </>
+  );
+
   return (
-    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: background }]}>
-      {panelVisible ? (
-        <View style={[styles.panel, { backgroundColor: background, borderColor: border }]}>
-          <PrimaryButton title="Take a photo" onPress={handlePickPhoto} />
-          <PrimaryButton title="Choose photo from gallery" onPress={() => Alert.alert('Option 2')} />
-          <PrimaryButton title="Logout" onPress={() => {setShowDialog(true); setLogoutDialog(true);}} />
-          <PrimaryButton title="Delete account" onPress={() => {setShowDialog(true); setLogoutDialog(false);}} />
-          <TouchableOpacity onPress={togglePanel} style={styles.toggle}>
-            <Text style={{ color: primary, fontWeight: '600', alignSelf: 'center' }}>
-              Hide Options
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <View style={[styles.panel, { backgroundColor: background, borderColor: border }]}>
-          <TouchableOpacity onPress={togglePanel} style={styles.toggle}>
-            <Text style={{ color: primary, fontWeight: '600', alignSelf: 'center' }}>
-                Show Options
-            </Text>
-          </TouchableOpacity>
-        </View>
-      )}
+    <ScrollView
+      contentContainerStyle={[
+        styles.container,
+        { backgroundColor: background },
+      ]}
+    >
+      <View style={[styles.panel, { backgroundColor: background, borderColor: border }]}>
+        {panelVisible && renderPanelButtons()}
+        <TouchableOpacity onPress={togglePanel} style={styles.toggle}>
+          <Text style={{ color: primary, fontWeight: '600', alignSelf: 'center' }}>
+            {panelVisible ? 'Hide Options' : 'Show Options'}
+          </Text>
+        </TouchableOpacity>
+      </View>
 
       <ConfirmDialog
         visible={showDialog}
@@ -111,10 +113,16 @@ export default function PhotoScreen() {
         onConfirm={logoutDialog ? logout : handleAccountDelete}
       />
 
-      {photoUri ? (
-        <Image source={{ uri: photoUri }} style={styles.image} />
+      {photoUris.length > 0 ? (
+        photoUris.map((uri, index) => (
+          <ZoomableImage
+            key={index}
+            uri={uri}
+            onDelete={() => handleDeletePhoto(uri)}
+          />
+        ))
       ) : (
-        <Text style={[styles.placeholder, { color: text }]}>No photo taken yet</Text>
+        <Text style={[styles.placeholder, { color: text }]}>No photos taken yet</Text>
       )}
     </ScrollView>
   );
@@ -126,24 +134,18 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     alignItems: 'center',
   },
-  image: {
-    width: 200,
-    height: 200,
-    marginVertical: 20,
-    borderRadius: 12,
-  },
-  placeholder: {
-    marginVertical: 20,
-    fontSize: 16,
-  },
-  toggle: {
-    marginBottom: 0,
-  },
   panel: {
     width: '100%',
     marginBottom: 12,
     padding: 16,
     borderBottomWidth: 1,
     gap: 12,
+  },
+  toggle: {
+    marginBottom: 0,
+  },
+  placeholder: {
+    marginVertical: 20,
+    fontSize: 16,
   },
 });
