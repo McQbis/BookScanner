@@ -92,6 +92,7 @@ export default function PhotoScreen() {
 
   return (
     <ScrollView
+      style={{ backgroundColor: background }}
       contentContainerStyle={[
         styles.container,
         { backgroundColor: background },
