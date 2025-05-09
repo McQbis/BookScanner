@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await saveToken(token);
     setToken(token);
     setUser(user);
-    router.replace('/photo');
+    router.replace('/photo-catalog');
   };
 
   const logout = async () => {
