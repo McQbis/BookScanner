@@ -22,7 +22,7 @@ if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
 }
 
-export default function PhotoScreen() {
+export default function PhotoCatalogScreen() {
   const { token, logout } = useAuth();
   const { background, text, primary, border } = useThemeColors();
   const [photoUris, setPhotoUris] = useState<string[]>([]);

@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Dimensions, Image } from 'react-native';
 import { GestureHandlerRootView, GestureDetector, Gesture } from 'react-native-gesture-handler';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { useRouter } from 'expo-router';
+import { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import * as MediaLibrary from 'expo-media-library';
 import * as FileSystem from 'expo-file-system';
 import useThemeColors from '@/hooks/useThemeColors';
 import PrimaryButton from '@/components/PrimaryButton';
+import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -18,6 +20,7 @@ export default function ZoomableImage({ uri, onDelete }: ZoomableImageProps) {
   const scale = useSharedValue(1);
   const { background, border } = useThemeColors();
   const [imageHeight, setImageHeight] = useState<number>(SCREEN_WIDTH); // default square
+  const router = useRouter();
 
   const pinchGesture = Gesture.Pinch()
     .onUpdate((event) => {
@@ -70,8 +73,10 @@ export default function ZoomableImage({ uri, onDelete }: ZoomableImageProps) {
   return (
     <GestureHandlerRootView style={{ flex: 1, width: '100%', alignItems: 'center' }}>
       <View style={styles.container}>
-        <GestureDetector gesture={pinchGesture}>
-          <Animated.Image
+        <TouchableWithoutFeedback
+          onPress={() => router.push({ pathname: '/full-image', params: { uri } })}
+        >
+          <Image
             source={{ uri }}
             style={[
               { width: SCREEN_WIDTH, height: imageHeight },
@@ -79,7 +84,7 @@ export default function ZoomableImage({ uri, onDelete }: ZoomableImageProps) {
             ]}
             resizeMode="contain"
           />
-        </GestureDetector>
+        </TouchableWithoutFeedback>
 
         <View style={[styles.buttonsContainer, { borderColor: border, backgroundColor: background }]}>
           <PrimaryButton title="Download" onPress={handleDownload} />

@@ -32,8 +32,9 @@ export default function RootLayout() {
         <ThemeProvider>
           <Stack>
             <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="register" options={{ title: 'Register', headerShown: false }} />
-            <Stack.Screen name="photo" options={{ title: 'Take Photo', headerShown: false }} />
+            <Stack.Screen name="register" options={{ headerShown: false }} />
+            <Stack.Screen name="photo-catalog" options={{ headerShown: false }} />
+            <Stack.Screen name="full-image" options={{ headerShown: false }} />
             <Stack.Screen name="+not-found" options={{ title: 'Not Found' }} />
           </Stack>
           <ThemeToggle />

@@ -61,7 +61,7 @@ export default function RegisterScreen() {
       await login(access, { email: data.email });
   
       // Redirect user to photo page after successful login
-      router.replace('/photo');
+      router.replace('/photo-catalog');
   
     } catch (err: any) {
       console.error('Register error:', err.response?.data);
