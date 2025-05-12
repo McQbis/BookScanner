@@ -57,6 +57,29 @@ export default function PhotoCatalogScreen() {
     }
   };
 
+  const handlePickFromGallery = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Gallery access is needed to pick photos.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: false, // or true if you want multi-pick
+        quality: 0.5,
+      });
+
+      if (!result.canceled && result.assets?.length > 0) {
+        setPhotoUris((prev) => [...prev, result.assets[0].uri]);
+      }
+    } catch (error) {
+      console.error('Error picking from gallery:', error);
+      Alert.alert('Error', 'An error occurred while picking the photo from gallery.');
+    }
+  };
+
   const handleAccountDelete = async () => {
     try {
       const response = await api.delete('/delete-account/', {
@@ -89,7 +112,7 @@ export default function PhotoCatalogScreen() {
   const renderPanelButtons = () => (
     <>
       <PrimaryButton title="Take a photo" onPress={handlePickPhoto} />
-      <PrimaryButton title="Choose photo from gallery" onPress={() => Alert.alert('Option 2')} />
+      <PrimaryButton title="Choose photo from gallery" onPress={handlePickFromGallery} />
       <PrimaryButton title="Logout" onPress={() => { setShowDialog(true); setLogoutDialog(true); }} />
       <PrimaryButton title="Delete account" onPress={() => { setShowDialog(true); setLogoutDialog(false); }} />
     </>
