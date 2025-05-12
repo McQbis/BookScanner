@@ -36,19 +36,24 @@ export default function PhotoCatalogScreen() {
   }, []);
 
   const handlePickPhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Denied', 'Camera access is needed to take photos.');
-      return;
-    }
+    try {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'Camera access is needed to take photos.');
+        return;
+      }
 
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ['images'],
-      quality: 0.5,
-    });
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ['images'],
+        quality: 0.5,
+      });
 
-    if (!result.canceled && result.assets.length > 0) {
-      setPhotoUris((prev) => [...prev, result.assets[0].uri]);
+      if (!result.canceled && result.assets?.length > 0) {
+        setPhotoUris((prev) => [...prev, result.assets[0].uri]);
+      }
+    } catch (error) {
+      console.error('Error picking photo:', error);
+      Alert.alert('Error', 'An error occurred while picking the photo.');
     }
   };
 
@@ -134,6 +139,7 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 40,
     alignItems: 'center',
+    paddingBottom: 100,
   },
   panel: {
     width: '100%',
