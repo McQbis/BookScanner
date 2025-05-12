@@ -4,6 +4,7 @@ import {
   Pressable,
   Image,
   useWindowDimensions,
+  View,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -40,7 +41,7 @@ export default function FullscreenImageViewer() {
         setImageDimensions({ width: finalWidth, height: finalHeight });
       });
     }
-  }, [uri]);
+  }, [uri, SCREEN_WIDTH, SCREEN_HEIGHT]);
 
   const scale = useSharedValue(1);
   const translateX = useSharedValue(0);
@@ -61,30 +62,30 @@ export default function FullscreenImageViewer() {
     });
 
   const panGesture = Gesture.Pan()
-  .onStart(() => {
-    offsetX.value = translateX.value;
-    offsetY.value = translateY.value;
-  })
-  .onUpdate((e) => {
-    if (scale.value > 1) {
-      const scaledWidth = imageDimensions.width * scale.value;
-      const scaledHeight = imageDimensions.height * scale.value;
+    .onStart(() => {
+      offsetX.value = translateX.value;
+      offsetY.value = translateY.value;
+    })
+    .onUpdate((e) => {
+      if (scale.value > 1) {
+        const scaledWidth = imageDimensions.width * scale.value;
+        const scaledHeight = imageDimensions.height * scale.value;
 
-      const boundX = Math.max(0, (scaledWidth - SCREEN_WIDTH) / 2);
-      const boundY = Math.max(0, (scaledHeight - SCREEN_HEIGHT) / 2);
+        const boundX = Math.max(0, (scaledWidth - SCREEN_WIDTH) / 2);
+        const boundY = Math.max(0, (scaledHeight - SCREEN_HEIGHT) / 2);
 
-      translateX.value = clamp(
-        offsetX.value + e.translationX,
-        -boundX,
-        boundX
-      );
-      translateY.value = clamp(
-        offsetY.value + e.translationY,
-        -boundY,
-        boundY
-      );
-    }
-  });
+        translateX.value = clamp(
+          offsetX.value + e.translationX,
+          -boundX,
+          boundX
+        );
+        translateY.value = clamp(
+          offsetY.value + e.translationY,
+          -boundY,
+          boundY
+        );
+      }
+    });
 
   const composed = Gesture.Simultaneous(panGesture, pinchGesture);
 
@@ -96,6 +97,7 @@ export default function FullscreenImageViewer() {
       width: scaledWidth,
       height: scaledHeight,
       transform: [
+        { scale: scale.value },
         { translateX: scale.value > 1 ? translateX.value : 0 },
         { translateY: scale.value > 1 ? translateY.value : 0 },
       ],
@@ -103,15 +105,21 @@ export default function FullscreenImageViewer() {
   });
 
   return (
-    <GestureHandlerRootView style={styles.container}>
+    <GestureHandlerRootView style={[styles.container, { backgroundColor: 'black' }]}>
       <Pressable style={StyleSheet.absoluteFill} onPress={() => router.back()} />
-      <GestureDetector gesture={composed}>
-        <Animated.Image
-          source={{ uri: uri as string }}
-          style={[styles.image, animatedStyle]}
-          resizeMode="contain"
-        />
-      </GestureDetector>
+      <View style={styles.imageContainer}>
+        <GestureDetector gesture={composed}>
+          <Animated.Image
+            source={{ uri: uri as string }}
+            style={[
+              styles.image, 
+              { width: SCREEN_WIDTH, height: imageDimensions.height }, 
+              animatedStyle
+            ]}
+            resizeMode="contain"
+          />
+        </GestureDetector>
+      </View>
     </GestureHandlerRootView>
   );
 }
@@ -119,7 +127,11 @@ export default function FullscreenImageViewer() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },

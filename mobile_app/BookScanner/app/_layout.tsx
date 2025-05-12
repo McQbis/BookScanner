@@ -9,6 +9,7 @@ import { useColorScheme } from 'react-native';
 import { AuthProvider } from '@/hooks/useAuth';
 import Toast from 'react-native-toast-message';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as ScreenOrientation from 'expo-screen-orientation';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -19,6 +20,8 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    ScreenOrientation.unlockAsync();
+
     if (loaded) {
       SplashScreen.hideAsync();
     }
