@@ -44,6 +44,7 @@ export default function FullscreenImageViewer() {
   }, [uri, SCREEN_WIDTH, SCREEN_HEIGHT]);
 
   const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
   const offsetX = useSharedValue(0);
@@ -51,9 +52,12 @@ export default function FullscreenImageViewer() {
 
   const pinchGesture = Gesture.Pinch()
     .onUpdate((e) => {
-      scale.value = e.scale;
+      scale.value = savedScale.value * e.scale;
+      scale.value = clamp(scale.value, 1, 5);
     })
     .onEnd(() => {
+      savedScale.value = scale.value;
+
       if (scale.value < 1) {
         scale.value = withTiming(1);
         translateX.value = withTiming(0);
