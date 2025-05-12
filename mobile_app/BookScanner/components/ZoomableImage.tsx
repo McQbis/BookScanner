@@ -8,6 +8,7 @@ import * as FileSystem from 'expo-file-system';
 import useThemeColors from '@/hooks/useThemeColors';
 import PrimaryButton from '@/components/PrimaryButton';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
+import Toast from 'react-native-toast-message';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -38,20 +39,48 @@ export default function ZoomableImage({ uri, onDelete }: ZoomableImageProps) {
     try {
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== 'granted') {
-        alert('Permission to access media library is needed.');
+        alert('Permission denied. Cannot save image.');
         return;
       }
 
-      const fileUri = FileSystem.documentDirectory + 'book_scanner_downloaded.jpg';
-      await FileSystem.copyAsync({ from: uri, to: fileUri });
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (!fileInfo.exists) {
+        alert('Image file does not exist.');
+        return;
+      }
 
-      const asset = await MediaLibrary.createAssetAsync(fileUri);
-      await MediaLibrary.createAlbumAsync('Download', asset, false);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const fileName = `BookScanner_${timestamp}.jpg`;
 
-      alert('Photo downloaded to gallery!');
+      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+      if (!permissions.granted) {
+        alert('Permission to access folder denied.');
+        return;
+      }
+
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      const newFileUri = await FileSystem.StorageAccessFramework.createFileAsync(
+        permissions.directoryUri,
+        fileName,
+        'image/jpeg'
+      );
+
+      await FileSystem.writeAsStringAsync(newFileUri, base64, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      Toast.show({
+        type: 'success',
+        text1: 'Download complete',
+        text2: `${fileName} saved to selected folder.`,
+        position: 'top',
+      });
     } catch (error) {
-      console.error(error);
-      alert('Error downloading photo.');
+      console.error('Download error:', error);
+      alert('Error saving image.');
     }
   };
 
