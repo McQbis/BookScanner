@@ -66,9 +66,9 @@ export default function PhotoCatalogScreen() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsMultipleSelection: false, // or true if you want multi-pick
-        quality: 0.5,
+        mediaTypes: ['images'],
+        allowsMultipleSelection: true,
+        quality: 1,
       });
 
       if (!result.canceled && result.assets?.length > 0) {
