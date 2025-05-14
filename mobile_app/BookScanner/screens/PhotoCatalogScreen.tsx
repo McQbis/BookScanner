@@ -17,6 +17,7 @@ import ZoomableImage from '@/components/ZoomableImage';
 import { useAuth } from '@/hooks/useAuth';
 import useThemeColors from '@/hooks/useThemeColors';
 import api from '@/lib/api';
+import Toast from 'react-native-toast-message';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -35,6 +36,41 @@ export default function PhotoCatalogScreen() {
     setPanelVisible((prev) => !prev);
   }, []);
 
+  const handleUploadPhoto = async (uri:string) => {
+
+    const filename = uri.split('/').pop();
+    const match = /\.(\w+)$/.exec(filename ?? '');
+    const type = match ? `image/${match[1]}` : `image`;
+
+    const formData = new FormData();
+    formData.append('photo', {
+      uri,
+      name: filename,
+      type,
+    } as any);
+
+    try {
+      const response = await api.post('/photos/upload-photo/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      Toast.show({
+        type: 'success',
+        text1: 'Upload successful',
+        text2: 'Processed photo received.',
+      });
+      
+      const processedUri = response.data.processed_url;
+      setPhotoUris((prev) => [...prev, processedUri]);
+    } catch (error: any) {
+      console.error(error.response || error.message);
+      Alert.alert('Upload failed', 'An error occurred while uploading.');
+    }
+  };
+
   const handlePickPhoto = async () => {
     try {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
@@ -49,7 +85,7 @@ export default function PhotoCatalogScreen() {
       });
 
       if (!result.canceled && result.assets?.length > 0) {
-        setPhotoUris((prev) => [...prev, result.assets[0].uri]);
+        await handleUploadPhoto(result.assets[0].uri);
       }
     } catch (error) {
       console.error('Error picking photo:', error);
@@ -72,7 +108,7 @@ export default function PhotoCatalogScreen() {
       });
 
       if (!result.canceled && result.assets?.length > 0) {
-        setPhotoUris((prev) => [...prev, result.assets[0].uri]);
+        await handleUploadPhoto(result.assets[0].uri);
       }
     } catch (error) {
       console.error('Error picking from gallery:', error);
