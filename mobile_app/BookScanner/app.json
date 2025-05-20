@@ -3,7 +3,7 @@
     "name": "BookScanner",
     "slug": "BookScanner",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
@@ -12,6 +12,8 @@
       "supportsTablet": true
     },
     "android": {
+      "permissions": ["READ_MEDIA_IMAGES", "WRITE_EXTERNAL_STORAGE", "MEDIA_LIBRARY", "READ_EXTERNAL_STORAGE"],
+      "requestLegacyExternalStorage": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -34,7 +36,15 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Allow BookScanner to access your photos.",
+          "savePhotosPermission": "Allow BookScanner to save photos.",
+          "isAccessMediaLocationEnabled": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

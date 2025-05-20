@@ -46,7 +46,9 @@
     "react-native-toast-message": "^2.3.0",
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "expo-media-library": "~17.0.6",
+    "expo-screen-orientation": "~8.0.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
