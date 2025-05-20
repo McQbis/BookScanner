@@ -1,5 +1,11 @@
 from django.urls import path
-from .views import UploadEncryptedPhotoView, ViewDecryptedPhoto, TemporaryDecryptedPhotoView, DeletePhotoView, ListUserPhotosView
+from .views import (
+    UploadEncryptedPhotoView, 
+    ViewDecryptedPhoto, 
+    TemporaryDecryptedPhotoView, 
+    DeletePhotoView, 
+    ListUserPhotosView
+)
 
 urlpatterns = [
     path('upload-photo/', UploadEncryptedPhotoView.as_view(), name='upload-photo'),
