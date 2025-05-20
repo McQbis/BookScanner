@@ -19,7 +19,7 @@ class UploadEncryptedPhotoView(APIView):
     def post(self, request):
         uploaded_file = request.FILES.get('photo')
         if not uploaded_file:
-            return Response({'detail': 'No file uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
         fernet = get_user_key(request.user.id)
         encrypted = fernet.encrypt(uploaded_file.read())
@@ -39,7 +39,8 @@ class UploadEncryptedPhotoView(APIView):
         full_url = request.build_absolute_uri(signed_url)
 
         return Response({
-            "processed_url": full_url
+            "processed_url": full_url,
+            "photo_id": photo.id
         }, status=status.HTTP_201_CREATED)
 
 
@@ -95,3 +96,12 @@ class TemporaryDecryptedPhotoView(APIView):
             content_type='image/jpeg',
             filename=photo.original_filename
         )
+    
+class DeletePhotoView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, photo_id):
+        photo = get_object_or_404(EncryptedPhoto, id=photo_id, user=request.user)
+        photo.file.delete(save=False)  # delete file from storage
+        photo.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

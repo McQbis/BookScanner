@@ -23,13 +23,18 @@ if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
 }
 
+type PhotoEntry = {
+  uri: string;
+  id: number;
+};
+
 export default function PhotoCatalogScreen() {
   const { token, logout } = useAuth();
   const { background, text, primary, border } = useThemeColors();
-  const [photoUris, setPhotoUris] = useState<string[]>([]);
   const [panelVisible, setPanelVisible] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
   const [logoutDialog, setLogoutDialog] = useState(false);
+  const [photos, setPhotos] = useState<PhotoEntry[]>([]);
 
   const togglePanel = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -64,7 +69,7 @@ export default function PhotoCatalogScreen() {
       });
       
       const processedUri = response.data.processed_url;
-      setPhotoUris((prev) => [...prev, processedUri]);
+      setPhotos((prev) => [...prev, { uri: processedUri, id: response.data.photo_id }]);
     } catch (error: any) {
       console.error(error.response || error.message);
       Alert.alert('Upload failed', 'An error occurred while uploading.');
@@ -141,9 +146,32 @@ export default function PhotoCatalogScreen() {
     }
   };
 
-  const handleDeletePhoto = useCallback((uriToDelete: string) => {
-    setPhotoUris((prev) => prev.filter((uri) => uri !== uriToDelete));
-  }, []);
+  const handleDeletePhoto = useCallback(
+    async (photo: PhotoEntry) => {
+      try {
+        const response = await api.delete(`/photos/delete-photo/${photo.id}/`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.status === 204) {
+          setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+          Toast.show({
+            type: 'success',
+            text1: 'Photo deleted successfully',
+          });
+        } else {
+          Alert.alert('Delete failed', 'Server did not confirm deletion.');
+        }
+      } catch (error: any) {
+        console.error(error.response || error.message);
+        Alert.alert('Delete error', 'An error occurred while deleting.');
+      }
+    },
+    [token]
+  );
+
 
   const renderPanelButtons = () => (
     <>
@@ -178,12 +206,12 @@ export default function PhotoCatalogScreen() {
         onConfirm={logoutDialog ? logout : handleAccountDelete}
       />
 
-      {photoUris.length > 0 ? (
-        photoUris.map((uri, index) => (
+      {photos.length > 0 ? (
+        photos.map((photo) => (
           <ZoomableImage
-            key={index}
-            uri={uri}
-            onDelete={() => handleDeletePhoto(uri)}
+            key={photo.id}
+            uri={photo.uri}
+            onDelete={() => handleDeletePhoto(photo)}
           />
         ))
       ) : (
