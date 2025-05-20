@@ -5,8 +5,9 @@
 *.env
 .env.*
 *.py[cod]
-/media/
+media
 db.sqlite3
 **/migrations/*.pyc
 **/migrations/__pycache__/
 .DS_Store
+\staticfiles
