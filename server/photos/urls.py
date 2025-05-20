@@ -1,9 +1,10 @@
 from django.urls import path
-from .views import UploadEncryptedPhotoView, ViewDecryptedPhoto, TemporaryDecryptedPhotoView, DeletePhotoView
+from .views import UploadEncryptedPhotoView, ViewDecryptedPhoto, TemporaryDecryptedPhotoView, DeletePhotoView, ListUserPhotosView
 
 urlpatterns = [
     path('upload-photo/', UploadEncryptedPhotoView.as_view(), name='upload-photo'),
     path('view/<int:photo_id>/', ViewDecryptedPhoto.as_view(), name='view-photo'),
     path('temp-view/<str:signed_value>/', TemporaryDecryptedPhotoView.as_view()),
     path('delete-photo/<int:photo_id>/', DeletePhotoView.as_view(), name='delete-photo'),
+    path('user-photos/', ListUserPhotosView.as_view(), name='user-photos'),
 ]

@@ -11,7 +11,6 @@ from django.http import HttpResponseForbidden, HttpResponseNotFound
 from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 from django.conf import settings
 from .utils import generate_signed_url, verify_signed_url, get_user_key
-from cryptography.fernet import Fernet
 
 class UploadEncryptedPhotoView(APIView):
     permission_classes = [IsAuthenticated]
@@ -105,3 +104,23 @@ class DeletePhotoView(APIView):
         photo.file.delete(save=False)  # delete file from storage
         photo.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ListUserPhotosView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user_photos = EncryptedPhoto.objects.filter(user=request.user)
+        photo_list = []
+
+        for photo in user_photos:
+            signed_url = generate_signed_url(photo.id)
+            full_url = request.build_absolute_uri(signed_url)
+
+            photo_list.append({
+                "photo_id": photo.id,
+                "processed_url": full_url,
+                "original_filename": photo.original_filename,
+            })
+
+        return Response(photo_list)
