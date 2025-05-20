@@ -6,7 +6,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.authentication import TokenAuthentication
+import os
+from django.conf import settings
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -52,5 +53,13 @@ class DeleteAccountView(APIView):
 
     def delete(self, request):
         user = request.user
+
+        key_dir = os.path.join(settings.MEDIA_ROOT, 'keys')
+        os.makedirs(key_dir, exist_ok=True)
+        key_path = os.path.join(key_dir, f'user_{user.id}.key')
+        if os.path.exists(key_path):
+            os.remove(key_path)
+
         user.delete()
+
         return Response(status=status.HTTP_204_NO_CONTENT)
