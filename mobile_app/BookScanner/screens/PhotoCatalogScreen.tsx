@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import useThemeColors from '@/hooks/useThemeColors';
 import api from '@/lib/api';
 import Toast from 'react-native-toast-message';
+import { useEffect } from 'react';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -172,6 +173,29 @@ export default function PhotoCatalogScreen() {
     [token]
   );
 
+  const fetchUserPhotos = useCallback(async () => {
+    try {
+      const response = await api.get('/photos/user-photos/', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const fetchedPhotos = response.data.map((item: any) => ({
+        id: item.photo_id,
+        uri: item.processed_url,
+      }));
+
+      setPhotos(fetchedPhotos);
+    } catch (error: any) {
+      console.error('Error fetching photos:', error.response || error.message);
+      Alert.alert('Failed', 'Could not fetch your photos.');
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchUserPhotos();
+  }, [fetchUserPhotos]);
 
   const renderPanelButtons = () => (
     <>
