@@ -1,33 +1,97 @@
-import os
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from django.core.files.storage import default_storage
-from PIL import Image
+from .models import EncryptedPhoto
+from django.core.files.base import ContentFile
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404
+import tempfile
+from django.http import HttpResponseForbidden, HttpResponseNotFound
+from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 from django.conf import settings
+from .utils import generate_signed_url, verify_signed_url, get_user_key
+from cryptography.fernet import Fernet
 
-
-class UploadPhotoView(APIView):
+class UploadEncryptedPhotoView(APIView):
     permission_classes = [IsAuthenticated]
-    parser_classes = [MultiPartParser, FormParser]
 
-    def post(self, request, *args, **kwargs):
-        image_file = request.FILES.get('photo')
-        if not image_file:
-            return Response({'detail': 'No photo uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request):
+        uploaded_file = request.FILES.get('photo')
+        if not uploaded_file:
+            return Response({'detail': 'No file uploaded.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Save original image
-        filename = default_storage.save(f"photos/{image_file.name}", image_file)
-        original_path = os.path.join(settings.MEDIA_ROOT, filename)
+        fernet = get_user_key(request.user.id)
+        encrypted = fernet.encrypt(uploaded_file.read())
 
-        # Process image (convert to black and white)
-        processed_filename = f"processed_{image_file.name}"
-        processed_path = os.path.join(settings.MEDIA_ROOT, f"photos/{processed_filename}")
-        
-        with Image.open(original_path).convert("L") as img_bw:
-            img_bw.save(processed_path)
+        encrypted_file = ContentFile(encrypted)
+        photo = EncryptedPhoto.objects.create(
+            user=request.user,
+            file=None,
+            original_filename=uploaded_file.name,
+        )
+        filename = f'user_{request.user.id}_{photo.id}.enc'
+        photo.file.save(filename, encrypted_file)
+        photo.save()
 
-        processed_url = settings.MEDIA_URL + f"photos/{processed_filename}"
-        return Response({'processed_url': request.build_absolute_uri(processed_url)}, status=status.HTTP_201_CREATED)
+
+        signed_url = generate_signed_url(photo.id)
+        full_url = request.build_absolute_uri(signed_url)
+
+        return Response({
+            "processed_url": full_url
+        }, status=status.HTTP_201_CREATED)
+
+
+class ViewDecryptedPhoto(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, photo_id):
+        photo = get_object_or_404(EncryptedPhoto, id=photo_id, user=request.user)
+
+        fernet = get_user_key(request.user.id)
+
+        encrypted_path = photo.file.path
+        try:
+            with open(encrypted_path, 'rb') as f:
+                encrypted_data = f.read()
+                decrypted_data = fernet.decrypt(encrypted_data)
+        except Exception:
+            raise Http404("Could not decrypt the image.")
+
+        # Return decrypted image as response
+        return FileResponse(
+            ContentFile(decrypted_data),
+            content_type='image/jpeg',  # or derive from original_filename
+            filename=photo.original_filename
+        )
+
+
+
+class TemporaryDecryptedPhotoView(APIView):
+    permission_classes = []  # No auth needed; URL is signed
+
+    def get(self, request, signed_value):
+        photo_id = verify_signed_url(signed_value)
+        if photo_id is None:
+            return HttpResponseForbidden("Invalid or expired link.")
+
+        try:
+            photo = EncryptedPhoto.objects.get(id=photo_id)
+        except EncryptedPhoto.DoesNotExist:
+            return HttpResponseNotFound("Photo not found.")
+
+        fernet = get_user_key(photo.user.id)
+
+        with open(photo.file.path, 'rb') as f:
+            encrypted_data = f.read()
+            try:
+                decrypted_data = fernet.decrypt(encrypted_data)
+            except Exception:
+                return HttpResponseForbidden("Could not decrypt the image.")
+
+        return FileResponse(
+            ContentFile(decrypted_data),
+            content_type='image/jpeg',
+            filename=photo.original_filename
+        )
