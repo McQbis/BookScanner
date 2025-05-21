@@ -1,6 +1,6 @@
 import { useEffect, useState, createContext, useContext } from 'react';
-import { saveTokens, getAccessToken, removeTokens, getRefreshToken } from '@/lib/auth';
-import { refreshAccessToken } from '@/lib/api';
+import { saveTokens, getAccessToken, removeTokens } from '@/lib/auth';
+import { refreshAccessToken } from '@/lib/refresh';
 import { router } from 'expo-router';
 
 type User = { email: string };
@@ -14,12 +14,26 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+let globalLogoutCallback: (() => void) | null = null;
+
+export const setGlobalLogout = (cb: () => void) => {
+  globalLogoutCallback = cb;
+};
+
+export const triggerGlobalLogout = () => {
+  if (globalLogoutCallback) {
+    globalLogoutCallback();
+  }
+};
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    setGlobalLogout(logout);
+
     const bootstrap = async () => {
       let access = await getAccessToken();
       if (!access) {

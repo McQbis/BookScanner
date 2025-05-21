@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getAccessToken } from './auth';
-import { getRefreshToken, saveTokens, removeTokens } from './auth';
+import { refreshAccessToken } from './refresh';
+import { triggerGlobalLogout } from '@/hooks/useAuth';
 
 const api = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_BASE_URL,
@@ -35,23 +36,6 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-export const refreshAccessToken = async (): Promise<string | null> => {
-  const refresh = await getRefreshToken();
-  if (!refresh) return null;
-
-  try {
-    const response = await api.post('/token/refresh/', { refresh });
-    const newAccessToken = response.data.access;
-    const newRefreshToken = response.data.refresh ?? refresh;
-
-    await saveTokens(newAccessToken, newRefreshToken);
-    return newAccessToken;
-  } catch (error) {
-    await removeTokens();
-    return null;
-  }
-};
-
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -74,6 +58,10 @@ api.interceptors.response.use(
 
       try {
         const newAccessToken = await refreshAccessToken();
+        if (!newAccessToken) {
+          triggerGlobalLogout();
+          return Promise.reject(new Error('Session expired'));
+        }
         originalRequest.headers.Authorization = 'Bearer ' + newAccessToken;
         processQueue(null, newAccessToken);
         return api(originalRequest);
