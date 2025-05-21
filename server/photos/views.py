@@ -120,7 +120,6 @@ class DeletePhotoView(APIView):
             - 404 Not Found: if the photo does not exist or user is unauthorized
         """
         photo = get_object_or_404(EncryptedPhoto, id=photo_id, user=request.user)
-        photo.file.delete(save=False)
         photo.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
