@@ -59,7 +59,6 @@ export default function PhotoCatalogScreen() {
       const response = await api.post('/photos/upload-photo/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -124,9 +123,7 @@ export default function PhotoCatalogScreen() {
 
   const handleAccountDelete = async () => {
     try {
-      const response = await api.delete('/delete-account/', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.delete('/delete-account/');
 
       if (response.status === 204) {
         setShowDialog(false);
@@ -150,11 +147,7 @@ export default function PhotoCatalogScreen() {
   const handleDeletePhoto = useCallback(
     async (photo: PhotoEntry) => {
       try {
-        const response = await api.delete(`/photos/delete-photo/${photo.id}/`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await api.delete(`/photos/delete-photo/${photo.id}/`);
 
         if (response.status === 204) {
           setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
@@ -175,11 +168,7 @@ export default function PhotoCatalogScreen() {
 
   const fetchUserPhotos = useCallback(async () => {
     try {
-      const response = await api.get('/photos/user-photos/', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get('/photos/user-photos/');
 
       const fetchedPhotos = response.data.map((item: any) => ({
         id: item.photo_id,
