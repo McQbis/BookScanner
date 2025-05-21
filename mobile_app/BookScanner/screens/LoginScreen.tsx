@@ -37,8 +37,8 @@ export default function LoginScreen() {
         password: data.password,
       });
 
-      const { access } = response.data;
-      await login(access, { email: data.email });
+      const { access, refresh } = response.data;
+      await login(access, refresh, { email: data.email });
 
     } catch (err: any) {
       console.error('Login error:', err?.response?.data || err.message);
