@@ -53,6 +53,14 @@ class ViewDecryptedPhoto(APIView):
     def get(self, request, photo_id):
         """
         Decrypt and return a specific photo owned by the authenticated user.
+
+        This endpoint is useful for web applications or internal tools
+        where authenticated users (or admins) need direct access to their
+        decrypted images via secure, session- or token-based authentication.
+
+        For mobile apps like React Native, using signed temporary URLs
+        (see TemporaryDecryptedPhotoView) is more appropriate and efficient,
+        especially for embedding images via URI.
         
         Returns:
             - 200 OK: FileResponse with decrypted image
