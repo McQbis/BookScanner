@@ -14,11 +14,11 @@ const schema = z.object({
   email: z
     .string()
     .email('Invalid email address')
-    .min(1, 'Email is required'),  // Email is required and should be valid
+    .min(1, 'Email is required'),
   password: z
     .string()
     .min(6, 'Password must be at least 6 characters')
-    .regex(/[a-zA-Z0-9]/, 'Password must contain letters and numbers'),  // Ensuring password complexity
+    .regex(/[a-zA-Z0-9]/, 'Password must contain letters and numbers'),
   confirmPassword: z
     .string()
     .min(6, 'Please confirm your password')
@@ -57,8 +57,8 @@ export default function RegisterScreen() {
         password: data.password,
       });
   
-      const { access } = response.data;
-      await login(access, { email: data.email });
+      const { access, refresh } = response.data;
+      await login(access, refresh, { email: data.email });
   
       // Redirect user to photo page after successful login
       router.replace('/photo-catalog');
