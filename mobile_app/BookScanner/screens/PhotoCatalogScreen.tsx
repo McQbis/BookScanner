@@ -59,7 +59,6 @@ export default function PhotoCatalogScreen() {
       const response = await api.post('/photos/upload-photo/', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -72,8 +71,11 @@ export default function PhotoCatalogScreen() {
       const processedUri = response.data.processed_url;
       setPhotos((prev) => [...prev, { uri: processedUri, id: response.data.photo_id }]);
     } catch (error: any) {
-      console.error(error.response || error.message);
-      Alert.alert('Upload failed', 'An error occurred while uploading.');
+      const errorMessage = error.response || error.message;
+      console.error(errorMessage);
+      Alert.alert('Upload failed', 
+                  errorMessage === 'Session expired' ? 
+                  errorMessage : 'An error occurred while uploading.');
     }
   };
 
@@ -124,9 +126,7 @@ export default function PhotoCatalogScreen() {
 
   const handleAccountDelete = async () => {
     try {
-      const response = await api.delete('/delete-account/', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await api.delete('/delete-account/');
 
       if (response.status === 204) {
         setShowDialog(false);
@@ -134,15 +134,20 @@ export default function PhotoCatalogScreen() {
         Alert.alert('Success', 'Your account has been deleted.');
       }
     } catch (error: any) {
-      console.error(error.response || error.request || error.message);
-      Alert.alert(
-        'Error',
-        error.response
-          ? 'Server error occurred while deleting your account.'
-          : error.request
-          ? 'Network Error. Please check your connection.'
-          : 'An unknown error occurred.'
-      );
+      const errorMessage = error.response || error.request || error.message;
+      console.error(errorMessage);
+      if (errorMessage === 'Session expired') {
+        Alert.alert('Session expired', 'Please log in again.');
+      } else {
+        Alert.alert(
+          'Error',
+          error.response
+            ? 'Server error occurred while deleting your account.'
+            : error.request
+            ? 'Network Error. Please check your connection.'
+            : 'An unknown error occurred.'
+        );
+      }
       setShowDialog(false);
     }
   };
@@ -150,11 +155,7 @@ export default function PhotoCatalogScreen() {
   const handleDeletePhoto = useCallback(
     async (photo: PhotoEntry) => {
       try {
-        const response = await api.delete(`/photos/delete-photo/${photo.id}/`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await api.delete(`/photos/delete-photo/${photo.id}/`);
 
         if (response.status === 204) {
           setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
@@ -166,8 +167,11 @@ export default function PhotoCatalogScreen() {
           Alert.alert('Delete failed', 'Server did not confirm deletion.');
         }
       } catch (error: any) {
-        console.error(error.response || error.message);
-        Alert.alert('Delete error', 'An error occurred while deleting.');
+        const errorMessage = error.response || error.message;
+        console.error(errorMessage);
+        Alert.alert('Delete error', 
+                    errorMessage === 'Session expired' ? 
+                    errorMessage : 'An error occurred while deleting.');
       }
     },
     [token]
@@ -175,11 +179,7 @@ export default function PhotoCatalogScreen() {
 
   const fetchUserPhotos = useCallback(async () => {
     try {
-      const response = await api.get('/photos/user-photos/', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await api.get('/photos/user-photos/');
 
       const fetchedPhotos = response.data.map((item: any) => ({
         id: item.photo_id,
@@ -188,8 +188,11 @@ export default function PhotoCatalogScreen() {
 
       setPhotos(fetchedPhotos);
     } catch (error: any) {
-      console.error('Error fetching photos:', error.response || error.message);
-      Alert.alert('Failed', 'Could not fetch your photos.');
+      const errorMessage = error.response || error.message;
+      console.error('Error fetching photos:', errorMessage);
+      Alert.alert('Failed', 
+                  errorMessage === 'Session expired' ? 
+                  errorMessage : 'Could not fetch your photos.');
     }
   }, [token]);
 
