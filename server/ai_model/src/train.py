@@ -39,7 +39,7 @@ def train_model(model,
     val_losses = []
     best_val_loss = float('inf')
     early_stop_counter = 0
-    patience = 3  # Stop training if no improvement for 'patience' epochs
+    patience = 21  # Stop training if no improvement for 'patience' epochs
     images_scale = 0.05
     
     with open("../logs/train.log", "w") as log_file:
@@ -82,7 +82,7 @@ def train_model(model,
             train_losses.append(avg_epoch_loss)
             log_file.write(f"Epoch {epoch+1}/{epochs} completed, Avg Loss: {avg_epoch_loss:.6f}\n")
             
-            val_loss = evaluate_model(model, generator, device, criterion, num_batches, image_scale=images_scale)
+            val_loss = evaluate_model(model, generator, device, criterion, num_batches*2, image_scale=images_scale)
             val_losses.append(val_loss)
 
             images_scale *= 1.01
