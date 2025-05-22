@@ -12,6 +12,18 @@ from data_generator import DocumentImageGenerator
 from train import train_model
 from evaluate import evaluate_model
 import torch
+from functools import wraps
+
+def require_model_and_generator(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if self._model is None:
+            raise ValueError(f"Cannot execute '{func.__name__}': Model is not set.")
+        if self._generator is None:
+            raise ValueError(f"Cannot execute '{func.__name__}': Generator is not set.")
+        return func(self, *args, **kwargs)
+    return wrapper
+
 
 class NeuralNetHandler:
     def __init__(self, model=None, 
@@ -86,6 +98,7 @@ class NeuralNetHandler:
         else:
             ValueError("Invalid generator type. Please provide a valid DocumentImageGenerator instance.")
 
+    @require_model_and_generator
     def set_generator_seed(self, seed: int):
         """
         Set the seed for the DocumentImageGenerator instance.
@@ -95,6 +108,7 @@ class NeuralNetHandler:
         """
         self._generator.set_seed(seed)
 
+    @require_model_and_generator
     def get_train_losses(self):
         """
         Get the training losses.
@@ -104,6 +118,7 @@ class NeuralNetHandler:
         """
         return self._train_losses
     
+    @require_model_and_generator
     def get_val_losses(self):     
         """
         Get the validation losses.
@@ -113,6 +128,7 @@ class NeuralNetHandler:
         """
         return self._val_losses
 
+    @require_model_and_generator
     def train(self):
         """
         Train the model using the specified generator and hyperparameters.
@@ -131,6 +147,7 @@ class NeuralNetHandler:
         self._train_losses = results[2]
         self._val_losses = results[3]
         
+    @require_model_and_generator
     def evaluate(self):
         """
         Evaluate the model using the validation data.
@@ -141,6 +158,7 @@ class NeuralNetHandler:
                                             self._criterion, 
                                             self._num_batches)
         
+    @require_model_and_generator
     def save_model(self, path: str):
         """
         Save the trained model to a file.
