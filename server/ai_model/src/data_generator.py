@@ -145,6 +145,7 @@ class DocumentImageGenerator():
         new_h, new_w = h + 2 * padding, w + 2 * padding
         padded_image = np.zeros((new_h, new_w, c), dtype=np.uint8)
         padded_image[padding:padding+h, padding:padding+w] = image
+        padded_image = cv2.resize(padded_image, dsize=None, fx=0.1, fy=0.1, interpolation=cv2.INTER_LINEAR)
         return padded_image
     
     def _get_rotation_matrix(self, angle_x, angle_y, angle_z):

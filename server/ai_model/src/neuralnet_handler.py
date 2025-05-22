@@ -117,17 +117,19 @@ class NeuralNetHandler:
         """
         Train the model using the specified generator and hyperparameters.
         """
-        self._model, 
-        self._best_val_loss,
-        self._train_losses,
-        self._val_losses = train_model(self._model, 
-                                        self._generator, 
-                                        self._device, 
-                                        self._epochs, 
-                                        self._criterion, 
-                                        self._optimizer, 
-                                        self._num_batches,
-                                        self._name)
+        results = train_model(self._model, 
+                                self._generator, 
+                                self._device, 
+                                self._epochs, 
+                                self._criterion, 
+                                self._optimizer, 
+                                self._num_batches,
+                                self._name)
+        
+        self._model = results[0]
+        self._best_val_loss = results[1]
+        self._train_losses = results[2]
+        self._val_losses = results[3]
         
     def evaluate(self):
         """

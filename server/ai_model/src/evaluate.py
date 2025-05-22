@@ -32,8 +32,7 @@ def evaluate_model(model, generator, device, criterion, num_val_batches):
             # Process each image in the batch
             for img, (x_grid, y_grid) in zip(images, grids):
                 # Convert numpy arrays to PyTorch tensors
-                img_tensor = torch.from_numpy(img).unsqueeze(0).unsqueeze(0).float().to(device)  # Convert from HWC to CHW
-                img_tensor = img_tensor.unsqueeze(0)  # Add batch dimension
+                img_tensor = torch.from_numpy(img).unsqueeze(0).unsqueeze(0).float().to(device)
                 
                 x_grid_tensor = torch.from_numpy(x_grid).unsqueeze(0).unsqueeze(0).to(device)
                 y_grid_tensor = torch.from_numpy(y_grid).unsqueeze(0).unsqueeze(0).to(device)
@@ -52,11 +51,11 @@ def evaluate_model(model, generator, device, criterion, num_val_batches):
             avg_batch_loss = batch_loss / len(images) if images else 0
             total_val_loss += avg_batch_loss
             
-            file_log.write(f"Validation Batch {batch_idx+1}/{num_val_batches}, Loss: {avg_batch_loss:.6f}")
+            file_log.write(f"Validation Batch {batch_idx+1}/{num_val_batches}, Loss: {avg_batch_loss:.6f}\n")
     
         # Average validation loss
         avg_val_loss = total_val_loss / num_val_batches if num_val_batches > 0 else 0
         
-        file_log.write(f"Validation completed, Avg Loss: {avg_val_loss:.6f}")
+        file_log.write(f"Validation completed, Avg Loss: {avg_val_loss:.6f}\n")
     
     return avg_val_loss
