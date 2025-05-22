@@ -40,6 +40,7 @@ def train_model(model,
     best_val_loss = float('inf')
     early_stop_counter = 0
     patience = 3  # Stop training if no improvement for 'patience' epochs
+    images_scale = 0.05
     
     with open("../logs/train.log", "w") as log_file:
         log_file.write(f"Starting training for {epochs} epochs...\n")
@@ -49,7 +50,7 @@ def train_model(model,
             epoch_loss = 0.0
             
             for batch_idx in range(num_batches):
-                generator.regenerate_data()
+                generator.regenerate_data(image_scale=images_scale)
                 images = generator.get_images()
                 grids = generator.get_grids()
                 
@@ -81,8 +82,10 @@ def train_model(model,
             train_losses.append(avg_epoch_loss)
             log_file.write(f"Epoch {epoch+1}/{epochs} completed, Avg Loss: {avg_epoch_loss:.6f}\n")
             
-            val_loss = evaluate_model(model, generator, device, criterion, num_batches)
+            val_loss = evaluate_model(model, generator, device, criterion, num_batches, image_scale=images_scale)
             val_losses.append(val_loss)
+
+            images_scale *= 1.01
             
             if val_loss < best_val_loss:
                 best_val_loss = val_loss

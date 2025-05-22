@@ -1,6 +1,6 @@
 import torch
 
-def evaluate_model(model, generator, device, criterion, num_val_batches):
+def evaluate_model(model, generator, device, criterion, num_val_batches, image_scale: float = 0.4):
     """
     Evaluate the U-Net model using dynamically generated document images.
     
@@ -10,6 +10,7 @@ def evaluate_model(model, generator, device, criterion, num_val_batches):
         device: The device to run evaluation on (CPU or GPU)
         criterion: Loss function
         num_val_batches: Number of mini batches to evaluate on
+        images_scale: Scale of the images to be generated (default is 0.4)
             
     Returns:
         Average validation loss
@@ -21,7 +22,7 @@ def evaluate_model(model, generator, device, criterion, num_val_batches):
     with open("../logs/evaluate.log", "w") as file_log, torch.no_grad():
         for batch_idx in range(num_val_batches):
             # Generate new batch of validation data
-            generator.regenerate_data()
+            generator.regenerate_data(image_scale=image_scale)
             
             # Get images and grids
             images = generator.get_images()
