@@ -145,7 +145,6 @@ class DocumentImageGenerator():
         new_h, new_w = h + 2 * padding, w + 2 * padding
         padded_image = np.zeros((new_h, new_w, c), dtype=np.uint8)
         padded_image[padding:padding+h, padding:padding+w] = image
-        padded_image = cv2.resize(padded_image, dsize=None, fx=0.1, fy=0.1, interpolation=cv2.INTER_LINEAR)
         return padded_image
     
     def _get_rotation_matrix(self, angle_x, angle_y, angle_z):
@@ -222,8 +221,13 @@ class DocumentImageGenerator():
         with open(file_path, "r", encoding="utf-8") as file:
             self._text = file.read().split()
     
-    def generate_new_images(self):
-        """Generates new images using the data generator."""
+    def generate_new_images(self, image_scale: float = 0.4):
+        """
+        Generates new images using the data generator.
+
+        Params:
+            image_scale (float): Scale factor for resizing images.
+        """
         self._generate_random_file_content()
         self._convert_ods_to_pdf()
         self._convert_pdf_to_jpeg()
@@ -233,6 +237,9 @@ class DocumentImageGenerator():
             # Add padding to prevent cropping
             padding = random.randint(400, 550)
             scaled_image = self._add_padding(self._images[i], padding)
+
+            # Resize image
+            scaled_image = cv2.resize(scaled_image, dsize=None, fx=image_scale, fy=image_scale, interpolation=cv2.INTER_LINEAR)
 
             # Get new dimensions
             height, width = scaled_image.shape[:2]
@@ -264,8 +271,8 @@ class DocumentImageGenerator():
     
             self._grids.append((x_map_final, y_map_final))
 
-    def regenerate_data(self):
+    def regenerate_data(self, image_scale: float = 0.4):
         """Regenerates images and deformation grids using the data generator."""
         self.delete_images()
         self.delete_grids()
-        self.generate_new_images()
+        self.generate_new_images(image_scale)
