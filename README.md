@@ -120,7 +120,7 @@ Make sure you have already installed all the packages from the [requirements.txt
 This project is built using the following technologies and libraries:
 
 ### Frontend
-- **React Native (Expo)** – for building the mobile application with a smooth cross-platform experience.
+- **React Native (Expo)** – for building the mobile application
 - **Axios** – for handling HTTP requests
 - **Expo Secure Store** – for secure data storage
 
@@ -130,17 +130,13 @@ This project is built using the following technologies and libraries:
 - **Django REST Framework Simple JWT** – for JWT-based authentication.
 
 ### Database
-- **psycopg2-binary** – PostgreSQL adapter for Python, used for database interactions.
+- **PostgreSQL**
 
 ### Python Libraries for Data Processing
-- **PyTorch (torch)** – for machine learning and deep learning tasks.
-- **NumPy** – for numerical computations.
+- **PyTorch** – for machine learning and deep learning tasks.
 - **OpenCV-python-headless** – computer vision tasks without GUI dependencies.
 - **matplotlib** – for creating visualizations and plots.
-- **pdf2image** – to convert PDF documents to images.
-- **odfpy** – to read and write Open Document Format files.
 - **cryptography** – for cryptographic operations and security.
-- **python-decouple** – to manage environment variables and settings securely.
 
 ## Collaboration
 
