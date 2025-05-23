@@ -248,7 +248,7 @@ class DocumentImageGenerator():
             mesh_3d = self._generate_mesh_grid(width, height)
 
             # Define transformations
-            amplitude = random.randint(0, 100)  # Pixel displacement
+            amplitude = random.randint(0, height//35)  # Pixel displacement
             frequency = random.uniform(0.5, 3.0) * np.pi / width # Frequency relative to width
             rotation_matrix = self._get_rotation_matrix(random.randint(-10, 10),
                                                 random.randint(-10, 10),
@@ -258,8 +258,8 @@ class DocumentImageGenerator():
             x_map_final, y_map_final = self._apply_transformations(mesh_3d, rotation_matrix, amplitude, frequency)
             
             # Ensure correct data type for remap
-            x_map_final = x_map_final.astype(np.float32)
-            y_map_final = y_map_final.astype(np.float32)
+            x_map_final = x_map_final.astype(np.float32) / (width//2)
+            y_map_final = y_map_final.astype(np.float32) / (height//2)
 
             # Remap image using the transformed mesh
             self._images[i] = cv2.cvtColor(cv2.remap(scaled_image, 
@@ -268,7 +268,7 @@ class DocumentImageGenerator():
                                                     interpolation=cv2.INTER_LINEAR, 
                                                     borderMode=cv2.BORDER_CONSTANT),
                                             cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0
-    
+
             self._grids.append((x_map_final, y_map_final))
 
     def regenerate_data(self, image_scale: float = 0.4):
