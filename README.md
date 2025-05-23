@@ -10,6 +10,8 @@ The system consists of:
 
 - A server-side component for storing and processing images using AI
 
+## Image Processing Example
+
 ## Installation
 
 To run the project locally:
@@ -63,10 +65,11 @@ To access the Django admin panel, create a superuser:
 python manage.py createsuperuser
 ```
 
-Follow the prompts to enter a username, email, and password. Run another command: 
+Follow the prompts to enter a username, email, and password. Run another commands: 
 
 ```bash
 python manage.py migrate
+python manage.py collectstatic
 ```
 
 Now you can run the server:
@@ -95,7 +98,7 @@ Connect your Android device or run the emulator. And then launch the application
 npx expo run:android
 ```
 
-### AI training configuration
+### AI training module configuration
 
 The folder ```server/ai_model/``` contains a module for training neural network models. You need to install libreoffice and poppler-utils.
 
@@ -107,3 +110,17 @@ apt-get install poppler-utils
 Make sure you have already installed all the packages from the [requirements.txt](#server-configuration) file.
 
 ## Usage
+
+### Server usage
+
+### AI training module usage
+
+## Technologies Used
+
+## Collaboration
+
+This project is open to collaboration!  
+
+If you're interested in contributing, improving features, or reporting issues, feel free to reach out.
+
+You can contact me via open a **discussion in this repository**.
