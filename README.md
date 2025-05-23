@@ -10,7 +10,7 @@ The system consists of:
 
 - A server-side component for storing and processing images using AI
 
-## Image Processing Example
+<!-- ## Image Processing Example -->
 
 ## Installation
 
@@ -116,6 +116,31 @@ Make sure you have already installed all the packages from the [requirements.txt
 ### AI training module usage
 
 ## Technologies Used
+
+This project is built using the following technologies and libraries:
+
+### Frontend
+- **React Native (Expo)** – for building the mobile application with a smooth cross-platform experience.
+- **Axios** – for handling HTTP requests
+- **Expo Secure Store** – for secure data storage
+
+### Backend
+- **Django** – high-level Python web framework for backend development.
+- **Django REST Framework** – to build RESTful APIs.
+- **Django REST Framework Simple JWT** – for JWT-based authentication.
+
+### Database
+- **psycopg2-binary** – PostgreSQL adapter for Python, used for database interactions.
+
+### Python Libraries for Data Processing
+- **PyTorch (torch)** – for machine learning and deep learning tasks.
+- **NumPy** – for numerical computations.
+- **OpenCV-python-headless** – computer vision tasks without GUI dependencies.
+- **matplotlib** – for creating visualizations and plots.
+- **pdf2image** – to convert PDF documents to images.
+- **odfpy** – to read and write Open Document Format files.
+- **cryptography** – for cryptographic operations and security.
+- **python-decouple** – to manage environment variables and settings securely.
 
 ## Collaboration
 
