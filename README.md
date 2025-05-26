@@ -49,7 +49,7 @@ DB_USER=
 DB_PASSWORD=
 # Host address of your database
 DB_HOST=
-# Port your database is listening on (5432 is default for PostgreSQL)
+# Port your database is listening on (5432 is the default for PostgreSQL)
 DB_PORT=5432
 
 
@@ -65,7 +65,7 @@ To access the Django admin panel, create a superuser:
 python manage.py createsuperuser
 ```
 
-Follow the prompts to enter a username, email, and password. Run another commands: 
+Follow the prompts to enter a username, email, and password. Run other commands: 
 
 ```bash
 python manage.py migrate
@@ -103,7 +103,7 @@ npx expo run:android
 The folder ```server/ai_model/``` contains a module for training neural network models. You need to install libreoffice and poppler-utils.
 
 ```bash
-apt install LibreOffice
+apt install libreoffice
 apt-get install poppler-utils
 ```
 
@@ -112,6 +112,56 @@ Make sure you have already installed all the packages from the [requirements.txt
 ## Usage
 
 ### Server usage
+
+The admin site can be found at ```<server-address>/zone_51_hehhe/```.
+
+The server stores users' encrypted photos, where each user has their encrypted key used to encrypt their photos. The keys are encrypted using the ```MASTER_KEY``` in your ```.env``` file. Photos and user keys are in the ```media/``` folder.
+
+#### The application exposes two endpoints for retrieving decrypted user photos:
+
+**1. Authenticated Photo Access** 
+```http
+GET /api/photos/view/<photo_id>/
+```
+
+- Requires user authentication (JWT or session-based)
+
+- Decrypts the image server-side and returns it as a FileResponse
+
+- Suitable for internal tools, admin panels, or secure web apps
+
+- **WARNING**: Not ideal for React Native or similar environments where images are embedded via URI
+
+**Response:**
+
+**- 200** OK with decrypted image content
+
+**- 404** Not Found if photo doesn’t exist or decryption fails
+
+**2. Temporary Signed URL**
+```http
+GET /api/photos/temp-view/<signed_value>/**
+```
+
+- Does not require authentication
+
+- The signed_value is a time-limited, cryptographically signed token that maps to a specific photo
+
+- Designed for mobile applications (e.g. React Native) where images are embedded via direct URIs
+
+- Safer and more efficient for frontend usage
+
+```jsx
+<Image source={{ uri: '<server-addreess>/api/photos/temp-view/abc123xyz/' }} />
+```
+
+**Response:**
+
+***- 200*** OK with decrypted image content
+
+***- 403*** Forbidden if the link is invalid or expired
+
+***- 404*** Not Found if the photo does not exist
 
 ### AI training module usage
 
@@ -125,7 +175,7 @@ This project is built using the following technologies and libraries:
 - **Expo Secure Store** – for secure data storage
 
 ### Backend
-- **Django** – high-level Python web framework for backend development.
+- **Django** – a high-level Python web framework for backend development.
 - **Django REST Framework** – to build RESTful APIs.
 - **Django REST Framework Simple JWT** – for JWT-based authentication.
 
@@ -144,4 +194,4 @@ This project is open to collaboration!
 
 If you're interested in contributing, improving features, or reporting issues, feel free to reach out.
 
-You can contact me via open a **discussion in this repository**.
+You can contact me by opening a **discussion in this repository**.
