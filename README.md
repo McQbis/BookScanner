@@ -165,6 +165,99 @@ GET /api/photos/temp-view/<signed_value>/**
 
 ### AI training module usage
 
+You can find the AI training source code in the ```ai_model/src/``` folder.
+
+#### Data Generator
+
+The constructor requires a path to a text file, which will be used to generate random document content:
+```python
+generator = DocumentImageGenerator("/src/assets/text.txt")
+```
+If you want to change the content of the documents during training, you can provide the path to the new text file:
+```python
+generator.set_text_from_file_path(file_path: str)
+```
+You can set the seed of the generator, and thus you can generate the same dataset, for example, for model evaluation, every epoch:
+```python
+generator.set_seed(seed: int):
+```
+To generate a mini batch of photos, you can call the function, where you can specify the size of the photo:
+```python
+generator.generate_new_images(image_scale: float = 0.4)
+```
+If you want to delete old data and generate new data every epoch, for example, then you can call at the beginning of each epoch and still specify the size of the photo:
+```python
+generator.regenerate_data(self, image_scale: float = 0.4)
+```
+With these methods, you can freely manage your training data.
+
+#### Neural Network Handler
+
+This class manages the full lifecycle of training and evaluating the neural network model.
+
+To initialize the handler, pass in a PyTorch model and a document generator:
+```python
+handler = NeuralNetHandler(
+    model=your_model,
+    generator=your_generator,
+    device="cuda",
+    epochs=30,
+    learning_rate=0.001,
+    num_batches=300,
+    name="model"
+)
+```
+Arguments:
+
+- model: PyTorch model object or path to a .pt file. If a path is provided, the model is loaded from disk.
+
+- generator: Instance of DocumentImageGenerator, responsible for generating synthetic training data.
+
+- device: "cuda" or "cpu" – device to train the model on.
+
+- epochs: Number of epochs to train for.
+
+- learning_rate: Learning rate used by the Adam optimizer.
+
+- num_batches: Number of mini-batches per epoch.
+
+- name: Optional name identifier for the model (used in logs/saving checkpoints).
+
+If you want to train a new model, but keep the training parameters:
+```python
+handler.set_model(model_or_path, name="new_model")
+```
+If you want to use a different generator, but keep the model:
+```python
+handler.set_generator(generator)
+```
+You can set the generator seed from the handler:
+```python
+handler.set_generator_seed(seed: int)
+```
+To begin training:
+```python
+handler.train()
+```
+To begin evaluation:
+```python
+handler.evaluate()
+```
+You can access the training and validation loss history:
+```python
+handler.get_train_losses()
+handler.get_val_losses()
+```
+To save the current model state:
+```python
+handler.save_model("path/to/model.pth")
+```
+WARNING: This class requires both a model and a generator to be set before training or evaluation.
+
+You can conveniently manage the training logic in the ```train.py``` file.
+
+You can conveniently manage the evaluation logic in ```evaluate.py``` file.
+
 ## Technologies Used
 
 This project is built using the following technologies and libraries:
