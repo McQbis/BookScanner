@@ -50,6 +50,7 @@ def train_model(model,
             epoch_loss = 0.0
             
             for batch_idx in range(num_batches):
+                generator.set_seed(42)
                 generator.regenerate_data(image_scale=images_scale)
                 images = generator.get_images()
                 grids = generator.get_grids()
