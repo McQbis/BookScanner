@@ -18,9 +18,12 @@ def evaluate_model(model, generator, device, criterion, num_val_batches, image_s
 
     model.eval()
     total_val_loss = 0.0
+    generator.set_seed(42)
+    image_scale = 0.45
 
     with open("../logs/evaluate.log", "w") as file_log, torch.no_grad():
         for batch_idx in range(num_val_batches):
+
             # Generate new batch of validation data
             generator.regenerate_data(image_scale=image_scale)
             
