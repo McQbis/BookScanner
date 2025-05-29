@@ -1,5 +1,10 @@
 # BookScanner
 
+<p align="center">
+  <img src="mobile_app/BookScanner/assets/images/cropped-center.png" alt="Logo" width="200"/><br>
+  <strong>Book Scanner</strong>
+</p>
+
 ## Description
 
 This project aims to build a neural network model inspired by U-Net architecture to automatically straighten curved pages from books, making them appear as if scanned flat.
