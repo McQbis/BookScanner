@@ -129,9 +129,12 @@ class NeuralNetHandler:
         return self._val_losses
 
     @require_model_and_generator
-    def train(self):
+    def train(self, resume_from_checkpoint: bool = False):
         """
         Train the model using the specified generator and hyperparameters.
+        
+        Params:
+            resume_from_checkpoint: (bool) Whether to resume training from last saved checkpoint
         """
         results = train_model(self._model, 
                                 self._generator, 
@@ -140,7 +143,8 @@ class NeuralNetHandler:
                                 self._criterion, 
                                 self._optimizer, 
                                 self._num_batches,
-                                self._name)
+                                self._name,
+                                resume_from_checkpoint=resume_from_checkpoint)
         
         self._model = results[0]
         self._best_val_loss = results[1]
