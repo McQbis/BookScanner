@@ -20,7 +20,16 @@ The system consists of:
 <!-- ## Image Processing Example -->
 ### How does the data generator work?
 
-This tool generates synthetic document images with randomized table structures and formatting. It creates ODS files, converts them to PDF and then to JPEG images. Each image is augmented with 3D rotations and sinusoidal distortions to simulate real-world imperfections. Corresponding deformation grids are also produced. Document content is randomized to prevent the model from overfitting grid predictions to text content.
+This tool generates synthetic document images with randomized table structures and formatting. It creates ODS files, converts them to PDF, and then converts them to JPEG images. Each image is augmented with 3D rotations and sinusoidal distortions to simulate real-world imperfections. Corresponding deformation grids are also produced. Document content is randomized to prevent the model from overfitting grid predictions to text content.
+
+Below are sample generated images:
+
+<p align="center">
+  <img src="server/ai_model/src/assets/generated_image_example_1.png" alt="Example image" alt="Image 1" width="200"/>
+  <img src="server/ai_model/src/assets/generated_image_example_2.png" alt="Example image" alt="Image 2" width="200"/>
+  <img src="server/ai_model/src/assets/generated_image_example_3.png" alt="Example image" alt="Image 3" width="200"/>
+  <img src="server/ai_model/src/assets/generated_image_example_4.png" alt="Example image" alt="Image 3" width="200"/>
+</p>
 
 ## Installation
 
