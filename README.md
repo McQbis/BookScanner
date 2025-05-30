@@ -15,7 +15,12 @@ The system consists of:
 
 - A server-side component for storing and processing images using AI
 
+- A neural network training module with a data generator
+
 <!-- ## Image Processing Example -->
+### How does the data generator work?
+
+This tool generates synthetic document images with randomized table structures and formatting. It creates ODS files, converts them to PDF and then to JPEG images. Each image is augmented with 3D rotations and sinusoidal distortions to simulate real-world imperfections. Corresponding deformation grids are also produced. Document content is randomized to prevent the model from overfitting grid predictions to text content.
 
 ## Installation
 
