@@ -1,6 +1,6 @@
 import torch
 
-def evaluate_model(model, generator, device, criterion, num_val_batches, image_scale: float = 0.4):
+def evaluate_model(model, generator, device, criterion, num_val_batches, image_scale: float = 0.45):
     """
     Evaluate the U-Net model using dynamically generated document images.
     

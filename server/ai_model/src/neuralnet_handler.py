@@ -77,7 +77,7 @@ class NeuralNetHandler:
             if isinstance(model, torch.nn.Module):
                 self._model = model.to(self._device)
             elif type(model) == str:
-                self._model = torch.load(model).to(self._device)
+                self._model = torch.load(model, weights_only=False).to(self._device)
             else:
                 ValueError("Invalid model type. Please provide a valid PyTorch model or path to a saved model.")
             self._optimizer = torch.optim.Adam(self._model.parameters(), lr=self._learning_rate)
@@ -117,6 +117,16 @@ class NeuralNetHandler:
             List of training losses
         """
         return self._train_losses
+    
+    @require_model_and_generator
+    def get_best_val_loss(self):
+        """
+        Get the best validation loss.
+        
+        Returns:
+            Best validation loss
+        """
+        return self._best_val_loss  
     
     @require_model_and_generator
     def get_val_losses(self):     
@@ -170,5 +180,5 @@ class NeuralNetHandler:
         Params:
             path: (str) Path to save the model to
         """
-        torch.save(self._model.state_dict(), path)
+        torch.save(self._model, path)
         print(f"Model saved to {path}")
