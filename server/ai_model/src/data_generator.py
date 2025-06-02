@@ -221,7 +221,7 @@ class DocumentImageGenerator():
         with open(file_path, "r", encoding="utf-8") as file:
             self._text = file.read().split()
     
-    def generate_new_images(self, image_scale: float = 0.4):
+    def generate_new_images(self, image_scale: float = 0.45):
         """
         Generates new images using the data generator.
 
@@ -271,7 +271,7 @@ class DocumentImageGenerator():
     
             self._grids.append((x_map_final, y_map_final))
 
-    def regenerate_data(self, image_scale: float = 0.4):
+    def regenerate_data(self, image_scale: float = 0.45):
         """Regenerates images and deformation grids using the data generator."""
         self.delete_images()
         self.delete_grids()
