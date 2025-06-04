@@ -109,7 +109,7 @@ def train_model(model,
 
                 if avg_epoch_loss < best_train_loss:
                     best_train_loss = avg_epoch_loss
-                    torch.save(model, f"../models/{name}_best_train.pth")
+                    torch.save(model.state_dict(), f"../models/{name}_best_train.pth")
                     log_file.write(f"New best model saved with training loss: {avg_epoch_loss:.6f}\n")
                     early_stop_counter_train = 0
                 else:
@@ -136,7 +136,7 @@ def train_model(model,
 
                     if val_loss < best_val_loss:
                         best_val_loss = val_loss
-                        torch.save(model, f"../models/{name}_best_val.pth")
+                        torch.save(model.state_dict(), f"../models/{name}_best_val.pth")
                         log_file.write(f"New best model saved with validation loss: {val_loss:.6f}\n")
                         early_stop_counter_val = 0
                     else:
