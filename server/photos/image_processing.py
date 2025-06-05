@@ -4,14 +4,14 @@ import torch
 import torch.nn.functional as F
 
 import sys
-sys.path.append("../ai_model/src")
+sys.path.append("./ai_model/src")
 from unet_flexible import UNetFlexible
 
 class ImageProcessing:
     def __init__(self):
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self._model = UNetFlexible()
-        self._model.load_state_dict(torch.load("server/ai_model/src/unet_deform.pth", map_location=self._device))
+        self._model.load_state_dict(torch.load("./ai_model/models/unet_deform_best_train.pth", map_location=self._device))
         self._model.to(self._device)
         self._model.eval()
 
@@ -26,14 +26,16 @@ class ImageProcessing:
             bytes: The processed image in bytes format.
         """
         image_cv = self._convert_to_cv(uploaded_file)
-        input_tensor = self._prepare_tensor(image_cv).to(self._device)  # [1, 1, H, W]
+        # image_cv = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
 
-        with torch.no_grad():
-            offsets = self._model(input_tensor)[0]  # [2, H, W]
-            processed_tensor = self._apply_inverse_warp(input_tensor[0], offsets)  # [1, H, W]
+        # input_tensor = self._prepare_tensor(image_cv).to(self._device)  # [1, 1, H, W]
 
-        processed_image = self._to_cv_image(processed_tensor)
-        return self._convert_to_bytes(processed_image)
+        # with torch.no_grad():
+        #     offsets = self._model(input_tensor)[0]  # [2, H, W]
+        #     processed_tensor = self._apply_inverse_warp(input_tensor[0], offsets)  # [1, H, W]
+
+        # processed_image = self._to_cv_image(processed_tensor)
+        return self._convert_to_bytes(image_cv)
 
     def _convert_to_cv(self, uploaded_file):
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
