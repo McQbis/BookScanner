@@ -51,11 +51,34 @@ class ImageProcessing:
         """
         image_cv = self._convert_to_cv(uploaded_file)
 
+        image_cv = self._find_page(image_cv)
+
+        image_cv = cv2.resize(image_cv, 
+                                   dsize=None, 
+                                   fx=0.4, 
+                                   fy=0.4, 
+                                   interpolation=cv2.INTER_LINEAR).astype(np.float32) // 255.0
+
+        offsets = self._predict_offsets(image_cv)
+
+        # image_cv = self._apply_inverse_warp(image_cv, offsets)
+
+        return self._convert_to_bytes(image_cv)
+    
+    def _find_page(self, image_cv):
+        """ 
+        Process the image to find the page and return the processed image.
+
+        Args:
+            image_cv: The input image in OpenCV format (grayscale).
+
+        Returns:
+            image_cv: The processed image with target page.
+        """
         image_cv = cv2.GaussianBlur(image_cv, (3, 3), 0.9)
 
         height, width = image_cv.shape[:2]
 
-        # Define center crop
         crop_size = 200
         center_x, center_y = width // 2, height // 2
         half_crop = crop_size // 2
@@ -64,15 +87,13 @@ class ImageProcessing:
         end_x = center_x + half_crop
         end_y = center_y + half_crop
 
-        # Crop image
         cropped_gray = image_cv[start_y:end_y, start_x:end_x]
 
-        # Find brightest pixel (maximum intensity)
         minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(cropped_gray)
 
         val = ((maxVal - minVal)//2) * 1.6
 
-        image_cv = image_cv.astype(np.int32)  # pozwala na wartości ujemne
+        image_cv = image_cv.astype(np.int32) 
         image_cv = image_cv * 3 - (val * 3)
         image_cv[image_cv < 0] = 0
         image_cv[image_cv > 255] = 255
@@ -83,30 +104,24 @@ class ImageProcessing:
                 255,
                 cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
                 cv2.THRESH_BINARY_INV,
-                15,  # rozmiar sąsiedztwa
-                10  # przesunięcie progu
+                15,
+                10
             )
         
         image_cv = cv2.bitwise_not(image_cv)
 
-        # 1. Wykryj krawędzie
         edges = cv2.Canny(image_cv, 50, 150)
 
-        # 2. Domknij przerwy w krawędziach (tolerancja na przerwania)
         kernel = np.ones((20, 20), np.uint8)
         closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
 
-        # 3. Znajdź kontury
         contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # 4. Znajdź największy kontur (według pola)
         largest_contour = max(contours, key=cv2.contourArea)
 
-        # 5. Utwórz maskę i narysuj kontur jako wypełniony
         mask = np.zeros_like(image_cv)
         cv2.drawContours(mask, [largest_contour], -1, 255, thickness=cv2.FILLED)
 
-        # 6. Zastosuj maskę: tylko największy kontur zostaje, reszta czarna
         image_cv = cv2.bitwise_and(image_cv, mask)
 
         image_cv = cv2.bitwise_not(image_cv)
@@ -116,21 +131,8 @@ class ImageProcessing:
         if lines is not None:
             for line in lines:
                 x1, y1, x2, y2 = line[0]
-                # Check if the line is vertical (within a small tolerance)
                 if abs(y1 - y2) > 800 and abs(x1 - x2) < 600:
-                    # # Extend line vertically by 20 pixels up and down
-                    # y_min = min(y1, y2) - 200
-                    # y_max = max(y1, y2) + 200
-                    
-                    # x1 -= 20  # extend left
-                    # x2 += 20  # extend right
-                    # x = (x1 + x2) // 2  # use average x
-
-                    # # Clamp to image boundaries
-                    # y_min = max(0, y_min)
-                    # y_max = min(image_cv.shape[0] - 1, y_max)
-
-                    # Draw the thicker line on image
+                    x1, y1, x2, y2 = extend_line(x1, y1, x2, y2, extension_length=200)
                     cv2.line(image_cv, (x1, y1), (x2, y2), 255, thickness=20)
 
         lines = cv2.HoughLinesP(image_cv, 1, np.pi / 180, threshold=80, minLineLength=1, maxLineGap=60)
@@ -138,75 +140,52 @@ class ImageProcessing:
         if lines is not None:
             for line in lines:
                 x1, y1, x2, y2 = line[0]
-                # Check if the line is vertical (within a small tolerance)
                 if abs(y1 - y2) > 1500 and abs(x1 - x2) < 600:
-                    # # Extend line vertically by 20 pixels up and down
-                    # y_min = min(y1, y2) - 200
-                    # y_max = max(y1, y2) + 200
-                    
-                    # x1 -= 20  # extend left
-                    # x2 += 20  # extend right
-                    # x = (x1 + x2) // 2  # use average x
-
-                    # # Clamp to image boundaries
-                    # y_min = max(0, y_min)
-                    # y_max = min(image_cv.shape[0] - 1, y_max)
-
-                    # Draw the thicker line on image
                     x1, y1, x2, y2 = extend_line(x1, y1, x2, y2, extension_length=200)
                     cv2.line(image_cv, (x1, y1), (x2, y2), 255, thickness=20)
 
         image_cv = cv2.bitwise_not(image_cv)
 
-        # 3. Znajdź kontury
         contours, _ = cv2.findContours(image_cv, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # 4. Znajdź największy kontur (według pola)
         largest_contour = max(contours, key=cv2.contourArea)
 
-        # 5. Utwórz maskę i narysuj kontur jako wypełniony
         mask = np.zeros_like(image_cv)
         cv2.drawContours(mask, [largest_contour], -1, 255, thickness=cv2.FILLED)
 
-        # 6. Zastosuj maskę: tylko największy kontur zostaje, reszta czarna
         image_cv = cv2.bitwise_and(image_cv, mask)
 
-        # # 1. Wykryj krawędzie
-        # edges = cv2.Canny(image_cv, 50, 150)
+        return image_cv
+    
+    def _predict_offsets(self, image_cv):
+        """
+        Predict offsets using the neural network model.
 
-        # # 2. Domknij przerwy w krawędziach (tolerancja na przerwania)
-        # kernel = np.ones((100, 100), np.uint8)
-        # closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+        Args:
+            image_cv: The input image in OpenCV format (grayscale).
 
-        # # 3. Znajdź kontury
-        # contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        Returns:
+            torch.Tensor: The predicted offsets as a tensor.
+        """
 
-        # # 4. Znajdź największy kontur (według pola)
-        # largest_contour = max(contours, key=cv2.contourArea)
+        image_tensor = torch.from_numpy(image_cv).unsqueeze(0).unsqueeze(0).float().to(self._device)
 
-        # # 5. Utwórz maskę i narysuj kontur jako wypełniony
-        # mask = np.zeros_like(image_cv)
-        # cv2.drawContours(mask, [largest_contour], -1, 255, thickness=cv2.FILLED)
+        predicted_offsets = self._model(image_tensor)
 
-        # # 6. Zastosuj maskę: tylko największy kontur zostaje, reszta czarna
-        # image_cv = cv2.bitwise_and(image_cv, mask)
-
-        # input_tensor = self._prepare_tensor(image_cv).to(self._device)  # [1, 1, H, W]
-
-        # with torch.no_grad():
-        #     offsets = self._model(input_tensor)[0]  # [2, H, W]
-        #     processed_tensor = self._apply_inverse_warp(input_tensor[0], offsets)  # [1, H, W]
-
-        # processed_image = self._to_cv_image(processed_tensor)
-        return self._convert_to_bytes(image_cv)
+        return predicted_offsets.squeeze(0)
 
     def _convert_to_cv(self, uploaded_file):
+        """ 
+        Convert the uploaded file to a grayscale OpenCV image.
+
+        Args:
+            uploaded_file: The uploaded file object.
+
+        Returns:
+            np.ndarray: The grayscale image in OpenCV format.
+        """
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         return cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
-
-    def _prepare_tensor(self, img):
-        img_tensor = torch.from_numpy(img).unsqueeze(0).float() / 255.0  # [1, H, W]
-        return img_tensor.unsqueeze(0)  # [1, 1, H, W]
 
     def _apply_inverse_warp(self, image_tensor, offsets):
         """
@@ -219,6 +198,7 @@ class ImageProcessing:
         Returns:
             torch.Tensor [1, H, W] - corrected image
         """
+        image_tensor = torch.from_numpy(image_tensor).unsqueeze(0).to(self._device)
         _, H, W = image_tensor.shape
         device = image_tensor.device
 
@@ -235,7 +215,7 @@ class ImageProcessing:
 
         warped = F.grid_sample(image_tensor.unsqueeze(0), norm_grid, mode='bilinear',
                                padding_mode='border', align_corners=True)
-        return warped.squeeze(0)  # [1, H, W]
+        return (warped.squeeze(0).squeeze(0).cpu().detach().numpy() * 255).clip(0, 255).astype(np.uint8)
 
     def _to_cv_image(self, tensor):
         tensor = (tensor.clamp(0, 1) * 255).byte().cpu().squeeze(0)  # [H, W]
@@ -243,4 +223,13 @@ class ImageProcessing:
         return cv2.cvtColor(img_np, cv2.COLOR_GRAY2BGR)
 
     def _convert_to_bytes(self, image):
+        """
+        Convert the OpenCV image to bytes format.
+
+        Args:
+            image: The OpenCV image in BGR format.
+
+        Returns:
+            bytes: The image in bytes format.
+        """
         return cv2.imencode('.jpg', image)[1].tobytes()
