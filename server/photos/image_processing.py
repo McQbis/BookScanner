@@ -1,35 +1,23 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+File name: data_generator.py
+Author: Maciej Kubiś
+Date: 2025-06-20
+Description: This module processes an uploaded grayscale image using a neural network model to predict offsets and applies inverse warping to the image.
+"""
+
 import cv2
 import numpy as np
 import torch
 import torch.nn.functional as F
+from scipy.ndimage import map_coordinates
+from scipy.interpolate import griddata
 
 import sys
 sys.path.append("./ai_model/src")
 from unet_flexible import UNetFlexible
-
-import numpy as np
-
-def extend_line(x1, y1, x2, y2, extension_length=200):
-    # 1. Compute direction vector
-    dx = x2 - x1
-    dy = y2 - y1
-
-    # 2. Normalize vector (unit direction)
-    length = np.sqrt(dx**2 + dy**2)
-    if length == 0:
-        return x1, y1, x2, y2  # Avoid division by zero
-
-    ux = dx / length
-    uy = dy / length
-
-    # 3. Extend both ends
-    new_x1 = int(x1 - ux * (extension_length / 2))
-    new_y1 = int(y1 - uy * (extension_length / 2))
-    new_x2 = int(x2 + ux * (extension_length / 2))
-    new_y2 = int(y2 + uy * (extension_length / 2))
-
-    return new_x1, new_y1, new_x2, new_y2
-
 
 class ImageProcessing:
     def __init__(self):
@@ -50,6 +38,7 @@ class ImageProcessing:
             bytes: The processed image in bytes format.
         """
         image_cv = self._convert_to_cv(uploaded_file)
+        # image_cv = cv2.imread("./ai_model/src/assets/generated_image_example_2.png", cv2.IMREAD_GRAYSCALE)
 
         image_cv = self._find_page(image_cv)
 
@@ -57,11 +46,11 @@ class ImageProcessing:
                                    dsize=None, 
                                    fx=0.4, 
                                    fy=0.4, 
-                                   interpolation=cv2.INTER_LINEAR).astype(np.float32) // 255.0
+                                   interpolation=cv2.INTER_LINEAR)
 
         offsets = self._predict_offsets(image_cv)
 
-        # image_cv = self._apply_inverse_warp(image_cv, offsets)
+        image_cv = self._apply_inverse_warp(image_cv, offsets)
 
         return self._convert_to_bytes(image_cv)
     
@@ -111,51 +100,61 @@ class ImageProcessing:
         image_cv = cv2.bitwise_not(image_cv)
 
         edges = cv2.Canny(image_cv, 50, 150)
-
         kernel = np.ones((20, 20), np.uint8)
         closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
 
         contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
         largest_contour = max(contours, key=cv2.contourArea)
-
         mask = np.zeros_like(image_cv)
         cv2.drawContours(mask, [largest_contour], -1, 255, thickness=cv2.FILLED)
-
         image_cv = cv2.bitwise_and(image_cv, mask)
 
         image_cv = cv2.bitwise_not(image_cv)
-
         lines = cv2.HoughLinesP(image_cv, 1, np.pi / 720, threshold=80, minLineLength=1, maxLineGap=30)
-
         if lines is not None:
             for line in lines:
                 x1, y1, x2, y2 = line[0]
                 if abs(y1 - y2) > 800 and abs(x1 - x2) < 600:
-                    x1, y1, x2, y2 = extend_line(x1, y1, x2, y2, extension_length=200)
+                    x1, y1, x2, y2 = self._extend_line(x1, y1, x2, y2, extension_length=200)
                     cv2.line(image_cv, (x1, y1), (x2, y2), 255, thickness=20)
 
         lines = cv2.HoughLinesP(image_cv, 1, np.pi / 180, threshold=80, minLineLength=1, maxLineGap=60)
-        
         if lines is not None:
             for line in lines:
                 x1, y1, x2, y2 = line[0]
                 if abs(y1 - y2) > 1500 and abs(x1 - x2) < 600:
-                    x1, y1, x2, y2 = extend_line(x1, y1, x2, y2, extension_length=200)
+                    x1, y1, x2, y2 = self._extend_line(x1, y1, x2, y2, extension_length=200)
                     cv2.line(image_cv, (x1, y1), (x2, y2), 255, thickness=20)
-
         image_cv = cv2.bitwise_not(image_cv)
 
         contours, _ = cv2.findContours(image_cv, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
         largest_contour = max(contours, key=cv2.contourArea)
-
         mask = np.zeros_like(image_cv)
         cv2.drawContours(mask, [largest_contour], -1, 255, thickness=cv2.FILLED)
-
         image_cv = cv2.bitwise_and(image_cv, mask)
 
         return image_cv
+    
+    def _extend_line(self, x1, y1, x2, y2, extension_length=200):
+        # 1. Compute direction vector
+        dx = x2 - x1
+        dy = y2 - y1
+
+        # 2. Normalize vector (unit direction)
+        length = np.sqrt(dx**2 + dy**2)
+        if length == 0:
+            return x1, y1, x2, y2  # Avoid division by zero
+
+        ux = dx / length
+        uy = dy / length
+
+        # 3. Extend both ends
+        new_x1 = int(x1 - ux * (extension_length / 2))
+        new_y1 = int(y1 - uy * (extension_length / 2))
+        new_x2 = int(x2 + ux * (extension_length / 2))
+        new_y2 = int(y2 + uy * (extension_length / 2))
+
+        return new_x1, new_y1, new_x2, new_y2
     
     def _predict_offsets(self, image_cv):
         """
@@ -167,12 +166,56 @@ class ImageProcessing:
         Returns:
             torch.Tensor: The predicted offsets as a tensor.
         """
-
-        image_tensor = torch.from_numpy(image_cv).unsqueeze(0).unsqueeze(0).float().to(self._device)
-
+        image_tensor = torch.from_numpy(image_cv.astype(np.float32)/255.0).unsqueeze(0).unsqueeze(0).float().to(self._device)
         predicted_offsets = self._model(image_tensor)
+        return predicted_offsets.squeeze(0).cpu().detach().numpy()  # [2, H, W] - absolute target coordinates
 
-        return predicted_offsets.squeeze(0)
+    def _apply_inverse_warp(self, image_cv, offsets):
+        """
+        Apply inverse warp to the image using the predicted offsets.
+
+        Args:
+            image_cv (np.ndarray): The input grayscale image.
+            offsets (np.ndarray): The predicted absolute coordinates [2, H, W].
+
+        Returns:
+            np.ndarray: The dewarped image.
+        """
+        H, W = image_cv.shape
+        map_x, map_y = offsets[0], offsets[1]
+
+        src_y, src_x = np.meshgrid(np.arange(H), np.arange(W), indexing='ij')
+        src_y = src_y.ravel()
+        src_x = src_x.ravel()
+        target_y = map_y.ravel()
+        target_x = map_x.ravel()
+
+        grid_y, grid_x = np.mgrid[0:H, 0:W]
+
+        inv_y = griddata(
+            points=np.vstack((target_y, target_x)).T,
+            values=src_y,
+            xi=(grid_y, grid_x),
+            method='linear',
+            fill_value=0
+        )
+        inv_x = griddata(
+            points=np.vstack((target_y, target_x)).T,
+            values=src_x,
+            xi=(grid_y, grid_x),
+            method='linear',
+            fill_value=0
+        )
+
+        inv_y = np.clip(inv_y, 0, H - 1)
+        inv_x = np.clip(inv_x, 0, W - 1)
+
+        coords = np.vstack([inv_y.ravel(), inv_x.ravel()])
+        warped = map_coordinates(image_cv, coords, order=1, mode='reflect')
+        warped = warped.reshape(H, W).astype(np.uint8)
+
+        return warped
+
 
     def _convert_to_cv(self, uploaded_file):
         """ 
@@ -186,41 +229,6 @@ class ImageProcessing:
         """
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         return cv2.imdecode(file_bytes, cv2.IMREAD_GRAYSCALE)
-
-    def _apply_inverse_warp(self, image_tensor, offsets):
-        """
-        Applies inverse warping using predicted absolute coordinates.
-
-        Args:
-            image_tensor: torch.Tensor [1, H, W]
-            offsets: torch.Tensor [2, H, W] - absolute target coordinates
-
-        Returns:
-            torch.Tensor [1, H, W] - corrected image
-        """
-        image_tensor = torch.from_numpy(image_tensor).unsqueeze(0).to(self._device)
-        _, H, W = image_tensor.shape
-        device = image_tensor.device
-
-        yy, xx = torch.meshgrid(torch.arange(H, device=device), torch.arange(W, device=device), indexing='ij')
-        source_grid = torch.stack([xx, yy], dim=0).float()  # [2, H, W]
-
-        displacement = offsets - source_grid
-        inverse_coords = source_grid - displacement  # [2, H, W]
-
-        norm_grid = inverse_coords.clone()
-        norm_grid[0] = 2.0 * norm_grid[0] / (W - 1) - 1.0
-        norm_grid[1] = 2.0 * norm_grid[1] / (H - 1) - 1.0
-        norm_grid = norm_grid.permute(1, 2, 0).unsqueeze(0)  # [1, H, W, 2]
-
-        warped = F.grid_sample(image_tensor.unsqueeze(0), norm_grid, mode='bilinear',
-                               padding_mode='border', align_corners=True)
-        return (warped.squeeze(0).squeeze(0).cpu().detach().numpy() * 255).clip(0, 255).astype(np.uint8)
-
-    def _to_cv_image(self, tensor):
-        tensor = (tensor.clamp(0, 1) * 255).byte().cpu().squeeze(0)  # [H, W]
-        img_np = tensor.numpy()
-        return cv2.cvtColor(img_np, cv2.COLOR_GRAY2BGR)
 
     def _convert_to_bytes(self, image):
         """
