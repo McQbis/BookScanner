@@ -13,7 +13,6 @@ from train import train_model
 from evaluate import evaluate_model
 import torch
 from functools import wraps
-from unet_flexible import UNetFlexible
 
 def require_model_and_generator(func):
     @wraps(func)

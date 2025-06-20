@@ -26,7 +26,85 @@ class ImageProcessing:
             bytes: The processed image in bytes format.
         """
         image_cv = self._convert_to_cv(uploaded_file)
-        # image_cv = cv2.cvtColor(image_cv, cv2.COLOR_BGR2GRAY)
+
+        image_cv = cv2.GaussianBlur(image_cv, (3, 3), 0.9)
+
+        height, width = image_cv.shape[:2]
+
+        # Define center crop
+        crop_size = 200
+        center_x, center_y = width // 2, height // 2
+        half_crop = crop_size // 2
+        start_x = center_x - half_crop
+        start_y = center_y - half_crop
+        end_x = center_x + half_crop
+        end_y = center_y + half_crop
+
+        # Crop image
+        cropped_gray = image_cv[start_y:end_y, start_x:end_x]
+
+        # Find brightest pixel (maximum intensity)
+        minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(cropped_gray)
+
+        val = ((maxVal - minVal)//2) * 1.6
+
+        image_cv = image_cv.astype(np.int32)  # pozwala na wartości ujemne
+        image_cv = image_cv * 3 - (val * 3)
+        image_cv[image_cv < 0] = 0
+        image_cv[image_cv > 255] = 255
+        image_cv = image_cv.astype(np.uint8)
+
+        image_cv = cv2.adaptiveThreshold(
+                image_cv,
+                255,
+                cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY_INV,
+                15,  # rozmiar sąsiedztwa
+                10  # przesunięcie progu
+            )
+        
+        image_cv = cv2.bitwise_not(image_cv)
+
+        # 1. Wykryj krawędzie
+        edges = cv2.Canny(image_cv, 50, 150)
+
+        # 2. Domknij przerwy w krawędziach (tolerancja na przerwania)
+        kernel = np.ones((20, 20), np.uint8)
+        closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+
+        # 3. Znajdź kontury
+        contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # 4. Znajdź największy kontur (według pola)
+        largest_contour = max(contours, key=cv2.contourArea)
+
+        # 5. Utwórz maskę i narysuj kontur jako wypełniony
+        mask = np.zeros_like(image_cv)
+        cv2.drawContours(mask, [largest_contour], -1, 255, thickness=cv2.FILLED)
+
+        # 6. Zastosuj maskę: tylko największy kontur zostaje, reszta czarna
+        image_cv = cv2.bitwise_and(image_cv, mask)
+
+
+        # # 1. Wykryj krawędzie
+        # edges = cv2.Canny(image_cv, 50, 150)
+
+        # # 2. Domknij przerwy w krawędziach (tolerancja na przerwania)
+        # kernel = np.ones((100, 100), np.uint8)
+        # closed = cv2.morphologyEx(edges, cv2.MORPH_CLOSE, kernel)
+
+        # # 3. Znajdź kontury
+        # contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # # 4. Znajdź największy kontur (według pola)
+        # largest_contour = max(contours, key=cv2.contourArea)
+
+        # # 5. Utwórz maskę i narysuj kontur jako wypełniony
+        # mask = np.zeros_like(image_cv)
+        # cv2.drawContours(mask, [largest_contour], -1, 255, thickness=cv2.FILLED)
+
+        # # 6. Zastosuj maskę: tylko największy kontur zostaje, reszta czarna
+        # image_cv = cv2.bitwise_and(image_cv, mask)
 
         # input_tensor = self._prepare_tensor(image_cv).to(self._device)  # [1, 1, H, W]
 
