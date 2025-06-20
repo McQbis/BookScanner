@@ -7,6 +7,7 @@ from django.http import FileResponse, Http404, HttpResponseForbidden, HttpRespon
 from django.shortcuts import get_object_or_404
 from .models import EncryptedPhoto
 from .utils import generate_signed_url, verify_signed_url, get_user_key
+from .image_processing import ImageProcessing
 
 
 class UploadEncryptedPhotoView(APIView):
@@ -25,13 +26,15 @@ class UploadEncryptedPhotoView(APIView):
             return Response({"detail": "No file uploaded."}, status=status.HTTP_400_BAD_REQUEST)
 
         fernet = get_user_key(request.user.id)
-        encrypted_data = fernet.encrypt(uploaded_file.read())
+        uploaded_file_name = uploaded_file.name
+        uploaded_file = ImageProcessing()(uploaded_file)
+        encrypted_data = fernet.encrypt(uploaded_file)
         encrypted_file = ContentFile(encrypted_data)
 
         photo = EncryptedPhoto.objects.create(
             user=request.user,
             file=None,
-            original_filename=uploaded_file.name,
+            original_filename=uploaded_file_name,
         )
 
         filename = f"user_{request.user.id}_{photo.id}.enc"

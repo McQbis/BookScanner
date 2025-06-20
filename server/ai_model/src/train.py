@@ -1,6 +1,6 @@
 import torch
 from evaluate import evaluate_model
-import torch.optim as optim
+from torch.optim.lr_scheduler import LambdaLR
 import os
 
 def train_model(model, 
@@ -40,12 +40,7 @@ def train_model(model,
     images_scales = [0.05, 0.1, 0.2, 0.4, 0.45]
     images_scale = images_scales.pop(0)
 
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-                    optimizer,
-                    mode='min',
-                    factor=0.5,
-                    patience=5,
-                )
+    scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1.0 if epoch < 5 else 0.1)
 
     # === Resume training if requested ===
     if resume_from_checkpoint and os.path.exists(checkpoint_path):
@@ -120,12 +115,6 @@ def train_model(model,
                             log_file.write(f"No improvement for 21 epochs, switching image scale to {images_scale:.2f}\n")
                             early_stop_counter_train = 0
                             best_train_loss = float('inf')
-                            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-                                            optimizer,
-                                            mode='min',
-                                            factor=0.5,
-                                            patience=4,
-                                        )
                         else:
                             log_file.write("Early stopping triggered.\n")
                             break

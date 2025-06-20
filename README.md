@@ -224,6 +224,7 @@ handler = NeuralNetHandler(
     learning_rate=0.001,
     num_batches=300,
     name="model"
+    base_model_class=None
 )
 ```
 Arguments:
@@ -241,6 +242,8 @@ Arguments:
 - num_batches: Number of mini-batches per epoch.
 
 - name: Optional name identifier for the model (used in logs/saving checkpoints).
+
+- base_model_class: **Required if model is a path**; class used to instantiate model before loading weights
 
 If you want to train a new model, but keep the training parameters:
 ```python
