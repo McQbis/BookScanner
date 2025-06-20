@@ -7,6 +7,30 @@ import sys
 sys.path.append("./ai_model/src")
 from unet_flexible import UNetFlexible
 
+import numpy as np
+
+def extend_line(x1, y1, x2, y2, extension_length=200):
+    # 1. Compute direction vector
+    dx = x2 - x1
+    dy = y2 - y1
+
+    # 2. Normalize vector (unit direction)
+    length = np.sqrt(dx**2 + dy**2)
+    if length == 0:
+        return x1, y1, x2, y2  # Avoid division by zero
+
+    ux = dx / length
+    uy = dy / length
+
+    # 3. Extend both ends
+    new_x1 = int(x1 - ux * (extension_length / 2))
+    new_y1 = int(y1 - uy * (extension_length / 2))
+    new_x2 = int(x2 + ux * (extension_length / 2))
+    new_y2 = int(y2 + uy * (extension_length / 2))
+
+    return new_x1, new_y1, new_x2, new_y2
+
+
 class ImageProcessing:
     def __init__(self):
         self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -85,6 +109,67 @@ class ImageProcessing:
         # 6. Zastosuj maskę: tylko największy kontur zostaje, reszta czarna
         image_cv = cv2.bitwise_and(image_cv, mask)
 
+        image_cv = cv2.bitwise_not(image_cv)
+
+        lines = cv2.HoughLinesP(image_cv, 1, np.pi / 720, threshold=80, minLineLength=1, maxLineGap=30)
+
+        if lines is not None:
+            for line in lines:
+                x1, y1, x2, y2 = line[0]
+                # Check if the line is vertical (within a small tolerance)
+                if abs(y1 - y2) > 800 and abs(x1 - x2) < 600:
+                    # # Extend line vertically by 20 pixels up and down
+                    # y_min = min(y1, y2) - 200
+                    # y_max = max(y1, y2) + 200
+                    
+                    # x1 -= 20  # extend left
+                    # x2 += 20  # extend right
+                    # x = (x1 + x2) // 2  # use average x
+
+                    # # Clamp to image boundaries
+                    # y_min = max(0, y_min)
+                    # y_max = min(image_cv.shape[0] - 1, y_max)
+
+                    # Draw the thicker line on image
+                    cv2.line(image_cv, (x1, y1), (x2, y2), 255, thickness=20)
+
+        lines = cv2.HoughLinesP(image_cv, 1, np.pi / 180, threshold=80, minLineLength=1, maxLineGap=60)
+        
+        if lines is not None:
+            for line in lines:
+                x1, y1, x2, y2 = line[0]
+                # Check if the line is vertical (within a small tolerance)
+                if abs(y1 - y2) > 1500 and abs(x1 - x2) < 600:
+                    # # Extend line vertically by 20 pixels up and down
+                    # y_min = min(y1, y2) - 200
+                    # y_max = max(y1, y2) + 200
+                    
+                    # x1 -= 20  # extend left
+                    # x2 += 20  # extend right
+                    # x = (x1 + x2) // 2  # use average x
+
+                    # # Clamp to image boundaries
+                    # y_min = max(0, y_min)
+                    # y_max = min(image_cv.shape[0] - 1, y_max)
+
+                    # Draw the thicker line on image
+                    x1, y1, x2, y2 = extend_line(x1, y1, x2, y2, extension_length=200)
+                    cv2.line(image_cv, (x1, y1), (x2, y2), 255, thickness=20)
+
+        image_cv = cv2.bitwise_not(image_cv)
+
+        # 3. Znajdź kontury
+        contours, _ = cv2.findContours(image_cv, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # 4. Znajdź największy kontur (według pola)
+        largest_contour = max(contours, key=cv2.contourArea)
+
+        # 5. Utwórz maskę i narysuj kontur jako wypełniony
+        mask = np.zeros_like(image_cv)
+        cv2.drawContours(mask, [largest_contour], -1, 255, thickness=cv2.FILLED)
+
+        # 6. Zastosuj maskę: tylko największy kontur zostaje, reszta czarna
+        image_cv = cv2.bitwise_and(image_cv, mask)
 
         # # 1. Wykryj krawędzie
         # edges = cv2.Canny(image_cv, 50, 150)
