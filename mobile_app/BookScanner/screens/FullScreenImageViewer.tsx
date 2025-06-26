@@ -52,8 +52,7 @@ export default function FullscreenImageViewer() {
 
   const pinchGesture = Gesture.Pinch()
     .onUpdate((e) => {
-      scale.value = savedScale.value * e.scale;
-      scale.value = clamp(scale.value, 1, 5);
+      scale.value = clamp(savedScale.value * e.scale, 1, 5);
     })
     .onEnd(() => {
       savedScale.value = scale.value;
@@ -62,6 +61,7 @@ export default function FullscreenImageViewer() {
         scale.value = withTiming(1);
         translateX.value = withTiming(0);
         translateY.value = withTiming(0);
+        savedScale.value = 1;
       }
     });
 
@@ -78,28 +78,15 @@ export default function FullscreenImageViewer() {
         const boundX = Math.max(0, (scaledWidth - SCREEN_WIDTH) / 2);
         const boundY = Math.max(0, (scaledHeight - SCREEN_HEIGHT) / 2);
 
-        translateX.value = clamp(
-          offsetX.value + e.translationX,
-          -boundX,
-          boundX
-        );
-        translateY.value = clamp(
-          offsetY.value + e.translationY,
-          -boundY,
-          boundY
-        );
+        translateX.value = clamp(offsetX.value + e.translationX, -boundX, boundX);
+        translateY.value = clamp(offsetY.value + e.translationY, -boundY, boundY);
       }
     });
 
   const composed = Gesture.Simultaneous(panGesture, pinchGesture);
 
   const animatedStyle = useAnimatedStyle(() => {
-    const scaledWidth = imageDimensions.width * scale.value;
-    const scaledHeight = imageDimensions.height * scale.value;
-
     return {
-      width: scaledWidth,
-      height: scaledHeight,
       transform: [
         { scale: scale.value },
         { translateX: scale.value > 1 ? translateX.value : 0 },
@@ -116,9 +103,12 @@ export default function FullscreenImageViewer() {
           <Animated.Image
             source={{ uri: uri as string }}
             style={[
-              styles.image, 
-              { width: SCREEN_WIDTH, height: imageDimensions.height }, 
-              animatedStyle
+              styles.image,
+              {
+                width: imageDimensions.width,
+                height: imageDimensions.height,
+              },
+              animatedStyle,
             ]}
             resizeMode="contain"
           />
