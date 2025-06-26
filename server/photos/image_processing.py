@@ -20,8 +20,14 @@ sys.path.append("./ai_model/src")
 from unet_flexible import UNetFlexible
 
 class ImageProcessing:
-    def __init__(self):
-        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    def __init__(self, device):
+        """
+        Initialize the ImageProcessing class with the specified device.
+
+        Args:
+            device (str): The device to run the model on, 'cuda' or 'cpu'.
+        """
+        self._device = device
         self._model = UNetFlexible()
         self._model.load_state_dict(torch.load("./ai_model/models/unet_deform_best_train.pth", map_location=self._device))
         self._model.to(self._device)

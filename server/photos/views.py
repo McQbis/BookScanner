@@ -7,47 +7,45 @@ from django.http import FileResponse, Http404, HttpResponseForbidden, HttpRespon
 from django.shortcuts import get_object_or_404
 from .models import EncryptedPhoto
 from .utils import generate_signed_url, verify_signed_url, get_user_key
-from .image_processing import ImageProcessing
-
+from .tasks import process_and_store_image
 
 class UploadEncryptedPhotoView(APIView):
+
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
         """
         Upload a photo and store it encrypted using the user's unique key.
-        
+        Process the image asynchronously using Celery.
+
         Returns:
-            - 201 Created: with signed URL and photo ID
             - 400 Bad Request: if no file is uploaded
         """
         uploaded_file = request.FILES.get('photo')
         if not uploaded_file:
             return Response({"detail": "No file uploaded."}, status=status.HTTP_400_BAD_REQUEST)
 
-        fernet = get_user_key(request.user.id)
-        uploaded_file_name = uploaded_file.name
-        uploaded_file = ImageProcessing()(uploaded_file)
-        encrypted_data = fernet.encrypt(uploaded_file)
-        encrypted_file = ContentFile(encrypted_data)
-
         photo = EncryptedPhoto.objects.create(
             user=request.user,
             file=None,
-            original_filename=uploaded_file_name,
+            original_filename=uploaded_file.name,
         )
 
-        filename = f"user_{request.user.id}_{photo.id}.enc"
-        photo.file.save(filename, encrypted_file)
-        photo.save()
+        # Odczyt do bajtów
+        image_bytes = uploaded_file.read()
 
-        signed_url = generate_signed_url(photo.id)
-        full_url = request.build_absolute_uri(signed_url)
+        # Wywołanie zadania Celery
+        process_and_store_image.delay(
+            user_id=request.user.id,
+            photo_id=photo.id,
+            original_name=uploaded_file.name,
+            image_bytes=image_bytes,
+        )
 
         return Response({
-            "processed_url": full_url,
             "photo_id": photo.id,
-        }, status=status.HTTP_201_CREATED)
+            "message": "Image processing started. Please check later.",
+        }, status=status.HTTP_202_ACCEPTED)
 
 
 class ViewDecryptedPhoto(APIView):

@@ -12,3 +12,6 @@ djangorestframework-simplejwt
 django-cors-headers
 cryptography
 scipy
+celery
+redis
+flower

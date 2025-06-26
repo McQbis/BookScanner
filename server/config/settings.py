@@ -163,3 +163,8 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 #     'ACCESS_TOKEN_LIFETIME': timedelta(seconds=5),
 #     'REFRESH_TOKEN_LIFETIME': timedelta(seconds=1000),
 # }
+
+# Celery configuration
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis jako broker
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
