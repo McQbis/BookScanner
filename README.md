@@ -25,10 +25,10 @@ This tool generates synthetic document images with randomized table structures a
 Below are sample generated images:
 
 <p align="center">
-  <img src="server/ai_model/src/assets/generated_image_example_1.png" alt="Example image" alt="Image 1" width="200"/>
-  <img src="server/ai_model/src/assets/generated_image_example_2.png" alt="Example image" alt="Image 2" width="200"/>
-  <img src="server/ai_model/src/assets/generated_image_example_3.png" alt="Example image" alt="Image 3" width="200"/>
-  <img src="server/ai_model/src/assets/generated_image_example_4.png" alt="Example image" alt="Image 3" width="200"/>
+  <img src="server/ai_model/src/assets/generated_image_example_1.jpg" alt="Example image" alt="Image 1" width="200"/>
+  <img src="server/ai_model/src/assets/generated_image_example_2.jpg" alt="Example image" alt="Image 2" width="200"/>
+  <img src="server/ai_model/src/assets/generated_image_example_3.jpg" alt="Example image" alt="Image 3" width="200"/>
+  <img src="server/ai_model/src/assets/generated_image_example_4.jpg" alt="Example image" alt="Image 3" width="200"/>
 </p>
 
 ## Installation
