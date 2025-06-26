@@ -19,6 +19,7 @@ import useThemeColors from '@/hooks/useThemeColors';
 import api from '@/lib/api';
 import Toast from 'react-native-toast-message';
 import { useEffect } from 'react';
+import * as FileSystem from 'expo-file-system';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -69,7 +70,17 @@ export default function PhotoCatalogScreen() {
       });
       
       const processedUri = response.data.processed_url;
-      setPhotos((prev) => [...prev, { uri: processedUri, id: response.data.photo_id }]);
+      const localFileName = `photo_${response.data.photo_id}.jpg`;
+
+      const localUri = FileSystem.cacheDirectory + localFileName;
+
+      const downloadRes = await FileSystem.downloadAsync(processedUri, localUri);
+
+      if (downloadRes.status !== 200) {
+        throw new Error('Failed to download processed image.');
+      }
+
+      setPhotos((prev) => [...prev, { uri: downloadRes.uri, id: response.data.photo_id }]);
     } catch (error: any) {
       const errorMessage = error.response || error.message;
       console.error(errorMessage);
