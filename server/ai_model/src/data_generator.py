@@ -21,6 +21,9 @@ import cv2
 import numpy as np
 import math
 
+from scipy.ndimage import map_coordinates
+from scipy.interpolate import griddata
+
 class DocumentImageGenerator():
     def __init__(self, file_path: str):
         """
@@ -165,19 +168,22 @@ class DocumentImageGenerator():
         mesh_3d = np.stack([x_map, y_map, np.zeros_like(x_map), np.ones_like(x_map)], axis=-1)  # (H, W, 4)
         return mesh_3d
     
-    def _apply_transformations(self, mesh, rotation_matrix, amplitude, frequency):
+    def _apply_transformations(self, mesh, rotation_matrix, amplitude, frequency, x_offset):
         """Apply both wavy distortion and 3D rotation to the transformation mesh."""
         h, w, _ = mesh.shape
         flat_mesh = mesh.reshape(-1, 4).T  # Shape: (4, H*W)
 
-        low_val = random.uniform(-1.0, 1.0)
-        high_low = random.uniform(low_val, 1.0)
+        low_val = random.uniform(-9.0, 0.9)
+        high_low = random.uniform(low_val - 0.1, low_val + 0.1) * -1.0
 
         # Generate a vector with values ranging from -1 to 1
         vector = np.linspace(low_val, high_low, flat_mesh.shape[1])
-        
+
         # Apply wavy transformation
-        flat_mesh[1] += amplitude * np.sin(frequency * flat_mesh[0] + random.randint(0, 1000)) * vector
+        values = amplitude * np.sin(frequency * flat_mesh[0] - x_offset) * vector
+        if values[len(values)//2 + w//2 + 30] < 0:
+            values *= -1.0 
+        flat_mesh[1] += values
         
         # Apply 3D rotation
         transformed_mesh = rotation_matrix @ flat_mesh
@@ -235,7 +241,7 @@ class DocumentImageGenerator():
         for i in range(len(self._images)):
 
             # Add padding to prevent cropping
-            padding = random.randint(400, 550)
+            padding = random.randint(400, 500)
             scaled_image = self._add_padding(self._images[i], padding)
 
             # Resize image
@@ -248,14 +254,16 @@ class DocumentImageGenerator():
             mesh_3d = self._generate_mesh_grid(width, height)
 
             # Define transformations
-            amplitude = random.randint(0, 100)  # Pixel displacement
-            frequency = random.uniform(0.5, 3.0) * np.pi / width # Frequency relative to width
-            rotation_matrix = self._get_rotation_matrix(random.randint(-10, 10),
-                                                random.randint(-10, 10),
+            size = random.uniform(1.0, 2.0)
+            frequency = size * np.pi / width # Frequency relative to width
+            amplitude = random.randint(0, int(width//100//size))  # Pixel displacement
+            x_offset = random.randint(width//6, width//6 + int(width//6*size * 0.6))
+            rotation_matrix = self._get_rotation_matrix(random.randint(0, 10),
+                                                random.randint(-5, 5),
                                                 random.randint(-5, 5))
             
             # Apply combined transformations
-            x_map_final, y_map_final = self._apply_transformations(mesh_3d, rotation_matrix, amplitude, frequency)
+            x_map_final, y_map_final = self._apply_transformations(mesh_3d, rotation_matrix, amplitude, frequency, x_offset)
             
             # Ensure correct data type for remap
             x_map_final = x_map_final.astype(np.float32)
@@ -268,8 +276,14 @@ class DocumentImageGenerator():
                                                     interpolation=cv2.INTER_LINEAR, 
                                                     borderMode=cv2.BORDER_CONSTANT),
                                             cv2.COLOR_BGR2GRAY).astype(np.float32) / 255.0
-    
-            self._grids.append((x_map_final, y_map_final))
+            
+            original_x = mesh_3d[..., 0]
+            original_y = mesh_3d[..., 1]
+            
+            dx = x_map_final - original_x
+            dy = y_map_final - original_y
+
+            self._grids.append((dx, dy))
 
     def regenerate_data(self, image_scale: float = 0.45):
         """Regenerates images and deformation grids using the data generator."""

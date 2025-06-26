@@ -2,6 +2,7 @@ import torch
 from evaluate import evaluate_model
 from torch.optim.lr_scheduler import LambdaLR
 import os
+from torch.amp import autocast, GradScaler
 
 def train_model(model, 
                 generator, 
@@ -37,10 +38,11 @@ def train_model(model,
     best_train_loss = float('inf')
     early_stop_counter_train = 0
     early_stop_counter_val = 0
-    images_scales = [0.05, 0.1, 0.2, 0.4, 0.45]
+    images_scales = [0.4]
     images_scale = images_scales.pop(0)
 
-    scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1.0 if epoch < 5 else 0.1)
+    scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1.0 if epoch < 2 else 0.1)
+    scaler = GradScaler(device)
 
     # === Resume training if requested ===
     if resume_from_checkpoint and os.path.exists(checkpoint_path):
@@ -86,10 +88,14 @@ def train_model(model,
                         target_grid = torch.cat([x_grid_tensor, y_grid_tensor], dim=1)
                         
                         optimizer.zero_grad()
-                        predicted_offsets = model(img_tensor)
-                        loss = criterion(predicted_offsets, target_grid)
-                        loss.backward()
-                        optimizer.step()
+                        
+                        with autocast(device.type):
+                            predicted_offsets = model(img_tensor)
+                            loss = criterion(predicted_offsets, target_grid)
+                        
+                        scaler.scale(loss).backward()
+                        scaler.step(optimizer)
+                        scaler.update()
                         
                         batch_loss += loss.item()
                     
@@ -98,7 +104,7 @@ def train_model(model,
                     log_file.write(f"Epoch {epoch+1}/{epochs}, Batch {batch_idx+1}/{num_batches}, Loss: {avg_batch_loss:.6f}\n")
 
                 avg_epoch_loss = epoch_loss / num_batches if num_batches > 0 else 0
-                scheduler.step(avg_epoch_loss)
+                scheduler.step()
                 train_losses.append(avg_epoch_loss)
                 log_file.write(f"Epoch {epoch+1}/{epochs} completed, Avg Loss: {avg_epoch_loss:.6f}\n")
 
@@ -119,7 +125,7 @@ def train_model(model,
                             log_file.write("Early stopping triggered.\n")
                             break
                 
-                if (epoch + 1) % 60 == 0 or epoch == epochs - 1:
+                if (epoch + 1) % 10 == 0 or epoch == epochs - 1:
                     val_loss = evaluate_model(model, generator, device, criterion, num_batches*2)
                     val_losses.append(val_loss)
 
@@ -130,7 +136,7 @@ def train_model(model,
                         early_stop_counter_val = 0
                     else:
                         early_stop_counter_val += 1
-                        if early_stop_counter_val >= 3:
+                        if early_stop_counter_val >= 50:
                             if len(images_scales) > 0:
                                 images_scale = images_scales.pop(0)
                                 log_file.write(f"No improvement in evaluation, switching image scale to {images_scale:.2f}\n")

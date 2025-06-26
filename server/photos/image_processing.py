@@ -14,20 +14,21 @@ import torch
 import torch.nn.functional as F
 from scipy.ndimage import map_coordinates
 from scipy.interpolate import griddata
+from torch.amp import autocast
 
 import sys
-sys.path.append("./ai_model/src")
-from unet_flexible import UNetFlexible
+sys.path.append("server/ai_model/src")
+from unet_optimized import UNetFlexible
 
 class ImageProcessing:
     def __init__(self):
-        self._device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self._model = UNetFlexible()
-        self._model.load_state_dict(torch.load("./ai_model/models/unet_deform_best_train.pth", map_location=self._device))
+        self._device = torch.device("cuda")
+        self._model = UNetFlexible(base_channels=64)
+        self._model.load_state_dict(torch.load("server/ai_model/models/unet_deform_best_train.pth", map_location=self._device))
         self._model.to(self._device)
         self._model.eval()
 
-    def __call__(self, uploaded_file):
+    def __call__(self, uploaded_file =None):
         """
         Process the uploaded grayscale image using a neural network and inverse warping.
 
@@ -37,20 +38,22 @@ class ImageProcessing:
         Returns:
             bytes: The processed image in bytes format.
         """
-        image_cv = self._convert_to_cv(uploaded_file)
-        # image_cv = cv2.imread("./ai_model/src/assets/generated_image_example_2.png", cv2.IMREAD_GRAYSCALE)
+        # image_cv = self._convert_to_cv(uploaded_file)
+        image_cv = cv2.imread("server/ai_model/src/assets/generated_image_example_1.jpg", cv2.IMREAD_GRAYSCALE)
 
-        image_cv = self._find_page(image_cv)
+        # image_cv = self._find_page(image_cv)
 
         image_cv = cv2.resize(image_cv, 
                                    dsize=None, 
-                                   fx=0.4, 
-                                   fy=0.4, 
+                                   fx=0.35, 
+                                   fy=0.35, 
                                    interpolation=cv2.INTER_LINEAR)
 
         offsets = self._predict_offsets(image_cv)
 
         image_cv = self._apply_inverse_warp(image_cv, offsets)
+
+        cv2.imwrite("output.jpg", image_cv)
 
         return self._convert_to_bytes(image_cv)
     
@@ -167,31 +170,41 @@ class ImageProcessing:
             torch.Tensor: The predicted offsets as a tensor.
         """
         image_tensor = torch.from_numpy(image_cv.astype(np.float32)/255.0).unsqueeze(0).unsqueeze(0).float().to(self._device)
-        predicted_offsets = self._model(image_tensor)
+        with torch.no_grad(), autocast(device_type="cuda"): 
+            predicted_offsets = self._model(image_tensor)
         return predicted_offsets.squeeze(0).cpu().detach().numpy()  # [2, H, W] - absolute target coordinates
 
     def _apply_inverse_warp(self, image_cv, offsets):
         """
-        Apply inverse warp to the image using the predicted offsets.
+        Apply inverse warp to the image using the predicted relative offsets.
 
         Args:
             image_cv (np.ndarray): The input grayscale image.
-            offsets (np.ndarray): The predicted absolute coordinates [2, H, W].
+            offsets (np.ndarray): The predicted relative displacements [2, H, W].
 
         Returns:
             np.ndarray: The dewarped image.
         """
         H, W = image_cv.shape
-        map_x, map_y = offsets[0], offsets[1]
+        dx, dy = offsets[0], offsets[1]
 
+        # Create source coordinate grid
         src_y, src_x = np.meshgrid(np.arange(H), np.arange(W), indexing='ij')
+
+        # Compute absolute target coordinates by applying relative offsets
+        target_y = src_y - dy
+        target_x = src_x - dx
+
+        # Flatten for interpolation
         src_y = src_y.ravel()
         src_x = src_x.ravel()
-        target_y = map_y.ravel()
-        target_x = map_x.ravel()
+        target_y = target_y.ravel()
+        target_x = target_x.ravel()
 
+        # Target grid to interpolate onto
         grid_y, grid_x = np.mgrid[0:H, 0:W]
 
+        # Interpolate source positions (inverse mapping)
         inv_y = griddata(
             points=np.vstack((target_y, target_x)).T,
             values=src_y,
@@ -207,6 +220,7 @@ class ImageProcessing:
             fill_value=0
         )
 
+        # Clip and remap image
         inv_y = np.clip(inv_y, 0, H - 1)
         inv_x = np.clip(inv_x, 0, W - 1)
 
@@ -241,3 +255,5 @@ class ImageProcessing:
             bytes: The image in bytes format.
         """
         return cv2.imencode('.jpg', image)[1].tobytes()
+    
+ImageProcessing()()
